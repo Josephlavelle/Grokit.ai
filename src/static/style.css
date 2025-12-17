@@ -107,3 +107,49 @@ body {
         display: inline-block;
       }
       
+      .file-name {
+        font-size: 14px;
+        color: #374151;
+      }
+      
+      .preview-container {
+        width: 100%;
+        max-height: 250px;
+        overflow-y: auto;
+        background-color: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 12px;
+        text-align: left;
+        color: #111827;
+      }
+      
+      .preview-container h3 {
+        margin-top: 0;
+        font-size: 16px;
+      }
+      
+      .preview-container pre {
+        white-space: pre-wrap;
+        font-family: monospace;
+        font-size: 14px;
+      }
+      
+      .spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        border-top: 2px solid white;
+        border-radius: 50%;
+        display: inline-block;
+        animation: spin 0.8s linear infinite;
+        margin-left: 8px;
+      }
+      
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      
+      .hidden {
+        display: none;
+      }

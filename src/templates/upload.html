@@ -5,26 +5,84 @@
   <title>Upload a File</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+<script>
+    const form = document.querySelector("form");
+    const button = document.getElementById("generate-btn");
+    const spinner = document.getElementById("spinner");
+    const text = document.getElementById("btn-text");
+  
+    form.addEventListener("submit", () => {
+      button.disabled = true;
+      text.textContent = "Generating...";
+      spinner.classList.remove("hidden");
+    });
+  </script>
+
 <body>
 
-  <div class="container">
-    <h1>📄 Upload a Text File</h1>
+<div class="container">
+  <h1>📄 Upload a Text File</h1>
 
-    <form method="POST" enctype="multipart/form-data" class="upload-form">
+  <form method="POST" enctype="multipart/form-data" class="upload-form">
 
-      <label class="file-input-wrapper">
-        <input type="file" name="file" accept=".txt" required>
-      </label>
+    <!-- Hidden file input -->
+    <input
+      type="file"
+      id="file"
+      name="file"
+      accept=".txt"
+      required
+      hidden
+    >
 
-      <button class="btn btn-primary" type="submit">
-        ⬆️ Upload
-      </button>
-    </form>
+    <!-- Custom choose file button -->
+    <label for="file" class="btn btn-secondary">
+      📂 Choose File
+    </label>
 
-    <a href="{{ url_for('home') }}" class="btn btn-secondary back-link">
-      ← Back to Home
-    </a>
-  </div>
+    <!-- Filename display -->
+    <p id="file-name" class="file-name">No file selected</p>
+
+    <!-- Preview area -->
+    <div id="preview-container" class="preview-container hidden">
+      <h3>Preview</h3>
+      <pre id="file-preview"></pre>
+    </div>
+
+<button class="btn btn-primary" type="submit" id="generate-btn">
+  <span id="btn-text">⚙️ Generate Questions</span>
+  <span id="spinner" class="spinner hidden"></span>
+</button>
+  </form>
+
+  <a href="{{ url_for('home') }}" class="btn btn-secondary back-link">
+    ← Back to Home
+  </a>
+</div>
+
+<script>
+  const fileInput = document.getElementById("file");
+  const fileName = document.getElementById("file-name");
+  const previewContainer = document.getElementById("preview-container");
+  const preview = document.getElementById("file-preview");
+
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+
+    if (!file) return;
+
+    fileName.textContent = file.name;
+
+    if (file.type === "text/plain") {
+      const reader = new FileReader();
+      reader.onload = () => {
+        preview.textContent = reader.result.slice(0, 3000); // limit preview size
+        previewContainer.classList.remove("hidden");
+      };
+      reader.readAsText(file);
+    }
+  });
+</script>
 
 </body>
 </html>
