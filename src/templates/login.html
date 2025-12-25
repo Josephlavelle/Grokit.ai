@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="container">
+  <h1>🔐 Login</h1>
+
+  <form method="POST" class="upload-form">
+    <input type="email" name="email" placeholder="Email" required>
+    <input type="password" name="password" placeholder="Password" required>
+
+    <button class="btn btn-primary" type="submit">
+      Log In
+    </button>
+  </form>
+
+  <p>
+    Don’t have an account?
+    <a href="{{ url_for('auth.signup') }}">Sign up</a>
+  </p>
+</div>
+
+</body>
+</html>
