@@ -3,12 +3,13 @@ from groq import Groq
 import logging
 import json
 import dotenv
+from models import User
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
 
 class QuestionGenerator():
-    def __init__(self, api_key=None, instructions_override = None):
+    def __init__(self, user:User, api_key=None, instructions_override = None):
         dotenv.load_dotenv()
         if not api_key:
             api_key = os.environ.get("GROQ_API_KEY")
@@ -35,8 +36,9 @@ class QuestionGenerator():
             logger.info(f"Using new instructions {instructions_override}")
             self.instructions = instructions_override
         self.client = Groq(api_key=api_key)
+        self.user = user
 
-    def make_request(self, input_text, model= "llama-3.3-70b-versatile", temperature = 0, additional_instructions = "", file_path = "model_responses/tests/"):
+    def make_request(self, input_text, model= "llama-3.3-70b-versatile", temperature = 0, additional_instructions = "", file_path = "model_responses/"):
         chat_completion = self.client.chat.completions.create(
             messages=[
                 {
@@ -51,13 +53,19 @@ class QuestionGenerator():
             temperature = temperature,
             model=model,
         )
-        with open(file_path + "input.txt", mode = "w") as f:
+        output_path = file_path+f"{self.user.id}/"
+        try:
+            os.makedirs(output_path, exist_ok=True)
+        except OSError as e:
+            logger.error(f"Error creating directory {output_path}")
+        
+        with open(output_path+"input.txt", mode = "w") as f:
             f.write(input_text)
 
-        with open(file_path + "output.json", mode = "w") as f:
+        with open(output_path + "output.json", mode = "w") as f:
             f.write(chat_completion.choices[0].message.content)
 
-        f =  open(file_path + "output.json")
+        f =  open(output_path + "output.json")
         questions_raw = f.read()
         output_json = json.loads(questions_raw)
         return output_json

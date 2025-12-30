@@ -3,7 +3,7 @@ import os
 import dotenv
 from QuestionGenerator import QuestionGenerator
 from flask import Flask
-from flask_login import LoginManager, login_required
+from flask_login import LoginManager, login_required, current_user
 from models import db, User
 from auth import auth
 
@@ -47,7 +47,7 @@ def upload():
 
         #Generate respone to session
         text = file.read().decode("utf-8")
-        client = QuestionGenerator()
+        client = QuestionGenerator(user=current_user)
         mcq_data = client.make_request(text)
         session["questions_json"] = mcq_data
 
