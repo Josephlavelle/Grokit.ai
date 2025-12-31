@@ -3,7 +3,7 @@ from groq import Groq
 import logging
 import json
 import dotenv
-from models import User, Upload, db
+from models import User, Upload, Quiz, db
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
@@ -73,10 +73,27 @@ class QuestionGenerator():
         output_json = json.loads(questions_raw)
 
         #Save metadata to dbb
-        input_upload = Upload(filename=output_filename, user_id=self.user.id, content = "output", created_at=datetime.now())
-        output_upload = Upload(filename=input_filename, user_id=self.user.id, content = "input", created_at=datetime.now())
+        input_upload = self.make_upload(input_filename)
+        output_upload = self.make_upload(output_filename)
+    
         db.session.add(input_upload)
         db.session.add(output_upload)
         db.session.commit()
         
+        quiz = self.make_quiz(output_json,output_filename)
+        db.session.add(quiz)
+        db.session.commit()
+
         return output_json
+    
+
+    def make_upload(self, filename):
+        return Upload(filename=filename, user_id=self.user.id, content = "output", created_at=datetime.now())
+    
+    def make_quiz(self, quiz_json, filename = None):
+        #TODO at some point this should refactor to use ID rather than filename
+        if filename:
+            output_file = Upload.query.filter_by(filename=filename).first()
+            return Quiz(user_id=self.user.id, content = quiz_json, upload_id = output_file.id, created_at=datetime.now())
+        else:
+            return Quiz(user_id=self.user.id, content = quiz_json, upload_id = None, created_at=datetime.now())

@@ -28,3 +28,18 @@ class Upload(db.Model):
     )
 
     user = db.relationship("User", backref="uploads")
+
+class Quiz(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    upload_id = db.Column(db.Integer, db.ForeignKey("upload.id"), nullable=True)
+    content = db.Column(db.JSON, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False)
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id"),
+        nullable=False
+    )
+
+    user = db.relationship("User", backref="quizzes")
+    upload = db.relationship("Upload", backref="quizzes")
