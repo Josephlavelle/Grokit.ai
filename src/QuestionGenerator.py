@@ -3,7 +3,8 @@ from groq import Groq
 import logging
 import json
 import dotenv
-from models import User
+from models import User, Upload, db
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
@@ -38,7 +39,7 @@ class QuestionGenerator():
         self.client = Groq(api_key=api_key)
         self.user = user
 
-    def make_request(self, input_text, model= "llama-3.3-70b-versatile", temperature = 0, additional_instructions = "", file_path = "model_responses/"):
+    def make_request(self, input_text, quiz_name, model= "llama-3.3-70b-versatile", temperature = 0, additional_instructions = "", file_path = "model_responses/"):
         chat_completion = self.client.chat.completions.create(
             messages=[
                 {
@@ -54,18 +55,28 @@ class QuestionGenerator():
             model=model,
         )
         output_path = file_path+f"{self.user.id}/"
+        output_filename = output_path + f"{quiz_name}_output.json" 
+        input_filename = output_path+f"{quiz_name}_input.txt"
         try:
             os.makedirs(output_path, exist_ok=True)
         except OSError as e:
             logger.error(f"Error creating directory {output_path}")
         
-        with open(output_path+"input.txt", mode = "w") as f:
+        with open(input_filename, mode = "w") as f:
             f.write(input_text)
 
-        with open(output_path + "output.json", mode = "w") as f:
+        with open(output_filename, mode = "w") as f:
             f.write(chat_completion.choices[0].message.content)
 
-        f =  open(output_path + "output.json")
+        f = open(output_filename)
         questions_raw = f.read()
         output_json = json.loads(questions_raw)
+
+        #Save metadata to dbb
+        input_upload = Upload(filename=output_filename, user_id=self.user.id, content = "output", created_at=datetime.now())
+        output_upload = Upload(filename=input_filename, user_id=self.user.id, content = "input", created_at=datetime.now())
+        db.session.add(input_upload)
+        db.session.add(output_upload)
+        db.session.commit()
+        
         return output_json

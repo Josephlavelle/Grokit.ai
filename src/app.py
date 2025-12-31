@@ -40,6 +40,7 @@ def home():
 def upload():
     if request.method == "POST":
         file = request.files.get("file")
+        name = request.form.get("quiz_name")
         if not file or file.filename == "":
             return "No file selected", 400
         if not file.filename.endswith(".txt"):
@@ -48,7 +49,7 @@ def upload():
         #Generate respone to session
         text = file.read().decode("utf-8")
         client = QuestionGenerator(user=current_user)
-        mcq_data = client.make_request(text)
+        mcq_data = client.make_request(input_text=text,quiz_name=name)
         session["questions_json"] = mcq_data
 
         return redirect(url_for("questions"))
