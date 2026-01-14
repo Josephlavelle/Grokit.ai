@@ -1,7 +1,7 @@
 .env
 inputs/
 backend/src/instance/
-backend/src/model_reponses/
+backend/src/model_responses/
 backend/src/__pycache__/
 requester.py
 
