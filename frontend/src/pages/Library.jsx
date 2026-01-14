@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const API_BASE = '';
 
 export default function Library() {
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingQuiz, setLoadingQuiz] = useState(null);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchQuizzes();
@@ -28,6 +30,33 @@ export default function Library() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openQuiz = async (quizId) => {
+    setLoadingQuiz(quizId);
+    setError('');
+
+    try {
+      const response = await fetch(`${API_BASE}/api/quizzes/${quizId}`, {
+        credentials: 'include',
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to load quiz');
+      }
+
+      // Navigate to questions page with the quiz data
+      navigate('/questions', {
+        state: {
+          questions: data.questions,
+          quizName: data.name,
+        },
+      });
+    } catch (err) {
+      setError(err.message);
+      setLoadingQuiz(null);
     }
   };
 
@@ -79,12 +108,36 @@ export default function Library() {
         ) : (
           <ul className="quiz-list" style={{ marginBottom: '24px' }}>
             {quizzes.map((quiz) => (
-              <li key={quiz.id} className="quiz-item">
+              <li
+                key={quiz.id}
+                className="quiz-item"
+                onClick={() => !loadingQuiz && openQuiz(quiz.id)}
+                style={{
+                  cursor: loadingQuiz ? 'wait' : 'pointer',
+                  opacity: loadingQuiz && loadingQuiz !== quiz.id ? 0.5 : 1,
+                }}
+              >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontWeight: '500' }}>{quiz.name || `Quiz ${quiz.id}`}</span>
-                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                    {quiz.created_at && formatDate(quiz.created_at)}
-                  </span>
+                  <div style={{ textAlign: 'left' }}>
+                    <span style={{ fontWeight: '500', display: 'block' }}>
+                      {quiz.name || `Quiz ${quiz.id}`}
+                    </span>
+                    <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                      {quiz.question_count} questions
+                    </span>
+                  </div>
+                  <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {loadingQuiz === quiz.id ? (
+                      <span className="spinner" style={{ margin: 0 }}></span>
+                    ) : (
+                      <>
+                        <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                          {quiz.created_at && formatDate(quiz.created_at)}
+                        </span>
+                        <span style={{ color: 'var(--accent-primary)', fontSize: '18px' }}>→</span>
+                      </>
+                    )}
+                  </div>
                 </div>
               </li>
             ))}

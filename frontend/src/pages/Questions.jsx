@@ -7,6 +7,7 @@ export default function Questions() {
   const location = useLocation();
   const navigate = useNavigate();
   const [questions, setQuestions] = useState(location.state?.questions || []);
+  const [quizName, setQuizName] = useState(location.state?.quizName || null);
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(!location.state?.questions);
   const [submitting, setSubmitting] = useState(false);
@@ -71,7 +72,11 @@ export default function Questions() {
       }
 
       navigate('/results', {
-        state: { score: data.score, total: data.total },
+        state: {
+          score: data.score,
+          total: data.total,
+          wrongAnswers: data.wrong_answers,
+        },
       });
     } catch (err) {
       setError(err.message);
@@ -108,79 +113,115 @@ export default function Questions() {
   }
 
   return (
-    <div className="centered">
-      <div className="container" style={{ maxWidth: '600px' }}>
-        <h1>Quiz Time</h1>
-        <p>
-          Progress: {answeredCount} / {totalQuestions} answered
-        </p>
+    <>
+      <div className="centered" style={{ paddingBottom: '80px' }}>
+        <div className="container" style={{ maxWidth: '600px' }}>
+          <h1>{quizName || 'Quiz Time'}</h1>
+          <p style={{ marginBottom: '32px' }}>
+            {totalQuestions} questions
+          </p>
 
-        {/* Progress bar */}
+          <form onSubmit={handleSubmit}>
+            {questions.map((q, qIndex) => (
+              <div key={qIndex} className="question-block">
+                <p>
+                  <span style={{ color: 'var(--accent-primary)', marginRight: '8px' }}>
+                    Q{qIndex + 1}.
+                  </span>
+                  {q.Question}
+                </p>
+
+                {q.Options.map((option, optIndex) => (
+                  <label key={optIndex}>
+                    <input
+                      type="radio"
+                      name={`q${qIndex}`}
+                      value={optIndex}
+                      onChange={() => handleAnswerChange(qIndex, optIndex)}
+                      required
+                    />
+                    <span>{option}</span>
+                  </label>
+                ))}
+              </div>
+            ))}
+
+            <button
+              className="btn btn-primary"
+              type="submit"
+              disabled={submitting || answeredCount < totalQuestions}
+              style={{ width: '100%', marginTop: '16px' }}
+            >
+              {submitting ? (
+                <>
+                  Checking Answers
+                  <span className="spinner"></span>
+                </>
+              ) : answeredCount < totalQuestions ? (
+                `Answer all questions (${totalQuestions - answeredCount} remaining)`
+              ) : (
+                'Submit Answers'
+              )}
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {/* Fixed progress bar at bottom */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          background: 'var(--bg-card)',
+          borderTop: '1px solid var(--border-color)',
+          padding: '12px 20px 16px',
+          zIndex: 100,
+        }}
+      >
         <div
           style={{
-            width: '100%',
-            height: '4px',
-            background: 'var(--bg-secondary)',
-            borderRadius: '2px',
-            marginBottom: '32px',
-            overflow: 'hidden',
+            maxWidth: '600px',
+            margin: '0 auto',
           }}
         >
           <div
             style={{
-              width: `${(answeredCount / totalQuestions) * 100}%`,
-              height: '100%',
-              background: 'var(--accent-gradient)',
-              borderRadius: '2px',
-              transition: 'width 0.3s ease',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '8px',
+              fontSize: '13px',
+              color: 'var(--text-secondary)',
             }}
-          />
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          {questions.map((q, qIndex) => (
-            <div key={qIndex} className="question-block">
-              <p>
-                <span style={{ color: 'var(--accent-primary)', marginRight: '8px' }}>
-                  Q{qIndex + 1}.
-                </span>
-                {q.Question}
-              </p>
-
-              {q.Options.map((option, optIndex) => (
-                <label key={optIndex}>
-                  <input
-                    type="radio"
-                    name={`q${qIndex}`}
-                    value={optIndex}
-                    onChange={() => handleAnswerChange(qIndex, optIndex)}
-                    required
-                  />
-                  <span>{option}</span>
-                </label>
-              ))}
-            </div>
-          ))}
-
-          <button
-            className="btn btn-primary"
-            type="submit"
-            disabled={submitting || answeredCount < totalQuestions}
-            style={{ width: '100%', marginTop: '16px' }}
           >
-            {submitting ? (
-              <>
-                Checking Answers
-                <span className="spinner"></span>
-              </>
-            ) : answeredCount < totalQuestions ? (
-              `Answer all questions (${totalQuestions - answeredCount} remaining)`
-            ) : (
-              'Submit Answers'
-            )}
-          </button>
-        </form>
+            <span>{answeredCount} of {totalQuestions} answered</span>
+            <span style={{ color: 'var(--accent-primary)', fontWeight: '600' }}>
+              {Math.round((answeredCount / totalQuestions) * 100)}%
+            </span>
+          </div>
+          <div
+            style={{
+              width: '100%',
+              height: '6px',
+              background: 'var(--bg-secondary)',
+              borderRadius: '3px',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                width: `${(answeredCount / totalQuestions) * 100}%`,
+                height: '100%',
+                background: 'var(--accent-gradient)',
+                borderRadius: '3px',
+                transition: 'width 0.3s ease',
+              }}
+            />
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
