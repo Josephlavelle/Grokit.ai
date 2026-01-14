@@ -1,0 +1,10 @@
+.env
+inputs/
+backend/src/instance/
+backend/src/model_reponses/
+backend/src/__pycache__/
+requester.py
+
+*.pyc
+*.pyo
+.DS_Store

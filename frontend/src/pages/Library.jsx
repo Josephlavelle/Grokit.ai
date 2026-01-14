@@ -31,12 +31,23 @@ export default function Library() {
     }
   };
 
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
   if (loading) {
     return (
       <div className="centered">
         <div className="container">
-          <h1>Loading...</h1>
-          <span className="spinner"></span>
+          <div className="loading-container">
+            <span className="spinner"></span>
+            <p>Loading your quizzes...</p>
+          </div>
         </div>
       </div>
     );
@@ -44,26 +55,37 @@ export default function Library() {
 
   return (
     <div className="centered">
-      <div className="container">
-        <h1>Quiz Library</h1>
+      <div className="container" style={{ maxWidth: '550px' }}>
+        <h1>My Library</h1>
+        <p>Your saved quizzes</p>
 
         {error && <div className="error-message">{error}</div>}
 
         {quizzes.length === 0 ? (
-          <p>No quizzes yet. Upload a file to create your first quiz!</p>
+          <div
+            style={{
+              padding: '40px 20px',
+              background: 'var(--bg-secondary)',
+              borderRadius: 'var(--radius-md)',
+              border: '1px dashed var(--border-color)',
+              marginBottom: '24px',
+            }}
+          >
+            <p style={{ fontSize: '32px', marginBottom: '12px' }}>📚</p>
+            <p style={{ margin: '0', color: 'var(--text-secondary)' }}>
+              No quizzes yet. Create your first one!
+            </p>
+          </div>
         ) : (
-          <ul style={{ listStyle: 'none', padding: 0, textAlign: 'left' }}>
+          <ul className="quiz-list" style={{ marginBottom: '24px' }}>
             {quizzes.map((quiz) => (
-              <li
-                key={quiz.id}
-                style={{
-                  padding: '10px',
-                  marginBottom: '10px',
-                  background: 'rgba(255,255,255,0.1)',
-                  borderRadius: '6px',
-                }}
-              >
-                {quiz.name || `Quiz ${quiz.id}`}
+              <li key={quiz.id} className="quiz-item">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: '500' }}>{quiz.name || `Quiz ${quiz.id}`}</span>
+                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                    {quiz.created_at && formatDate(quiz.created_at)}
+                  </span>
+                </div>
               </li>
             ))}
           </ul>

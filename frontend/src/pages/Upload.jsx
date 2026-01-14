@@ -5,27 +5,51 @@ const API_BASE = '';
 
 export default function Upload() {
   const [quizName, setQuizName] = useState('');
-  const [fileName, setFileName] = useState('No file selected');
+  const [fileName, setFileName] = useState('');
   const [preview, setPreview] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
+  const handleFile = (file) => {
     if (!file) return;
 
     setFileName(file.name);
 
-    if (file.type === 'text/plain') {
+    if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
       const reader = new FileReader();
       reader.onload = () => {
         setPreview(reader.result.slice(0, 3000));
         setShowPreview(true);
       };
       reader.readAsText(file);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    handleFile(e.target.files[0]);
+  };
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      fileInputRef.current.files = e.dataTransfer.files;
+      handleFile(e.dataTransfer.files[0]);
     }
   };
 
@@ -51,7 +75,6 @@ export default function Upload() {
         throw new Error(data.error || 'Upload failed');
       }
 
-      // Navigate to questions page with the questions data
       navigate('/questions', { state: { questions: data.questions } });
     } catch (err) {
       setError(err.message);
@@ -63,14 +86,15 @@ export default function Upload() {
   return (
     <div className="centered">
       <div className="container">
-        <h1>Upload a Text File</h1>
+        <h1>Create Quiz</h1>
+        <p>Upload your study material and let AI generate questions</p>
 
         {error && <div className="error-message">{error}</div>}
 
         <form onSubmit={handleSubmit} className="upload-form">
           <input
             type="text"
-            placeholder="Quiz Name"
+            placeholder="Give your quiz a name"
             value={quizName}
             onChange={(e) => setQuizName(e.target.value)}
             required
@@ -85,15 +109,46 @@ export default function Upload() {
             hidden
           />
 
-          <label
-            className="btn btn-secondary"
+          <div
+            className={`file-drop-zone ${dragActive ? 'active' : ''} ${fileName ? 'has-file' : ''}`}
             onClick={() => fileInputRef.current.click()}
-            style={{ cursor: 'pointer' }}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+            style={{
+              width: '100%',
+              maxWidth: '360px',
+              padding: '32px 24px',
+              border: `2px dashed ${dragActive ? 'var(--accent-primary)' : 'var(--border-color)'}`,
+              borderRadius: 'var(--radius-md)',
+              background: dragActive ? 'rgba(99, 102, 241, 0.1)' : 'var(--bg-secondary)',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
           >
-            Choose File
-          </label>
-
-          <p className="file-name">{fileName}</p>
+            {fileName ? (
+              <div style={{ color: 'var(--accent-secondary)' }}>
+                <span style={{ fontSize: '24px', marginBottom: '8px', display: 'block' }}>
+                  📄
+                </span>
+                <span style={{ fontWeight: '500' }}>{fileName}</span>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '8px 0 0' }}>
+                  Click to change file
+                </p>
+              </div>
+            ) : (
+              <div style={{ color: 'var(--text-secondary)' }}>
+                <span style={{ fontSize: '32px', marginBottom: '12px', display: 'block' }}>
+                  📁
+                </span>
+                <span style={{ fontWeight: '500' }}>Drop your .txt file here</span>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '8px 0 0' }}>
+                  or click to browse
+                </p>
+              </div>
+            )}
+          </div>
 
           {showPreview && (
             <div className="preview-container">
@@ -102,9 +157,20 @@ export default function Upload() {
             </div>
           )}
 
-          <button className="btn btn-primary" type="submit" disabled={loading}>
-            <span>{loading ? 'Generating...' : 'Generate Questions'}</span>
-            {loading && <span className="spinner"></span>}
+          <button
+            className="btn btn-primary"
+            type="submit"
+            disabled={loading || !fileName}
+            style={{ width: '100%', maxWidth: '360px' }}
+          >
+            {loading ? (
+              <>
+                Generating Quiz
+                <span className="spinner"></span>
+              </>
+            ) : (
+              'Generate Quiz'
+            )}
           </button>
         </form>
 

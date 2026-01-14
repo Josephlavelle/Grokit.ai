@@ -8,8 +8,10 @@ export default function ProtectedRoute({ children }) {
     return (
       <div className="centered">
         <div className="container">
-          <h1>Loading...</h1>
-          <span className="spinner"></span>
+          <div className="loading-container">
+            <span className="spinner"></span>
+            <p>Loading...</p>
+          </div>
         </div>
       </div>
     );

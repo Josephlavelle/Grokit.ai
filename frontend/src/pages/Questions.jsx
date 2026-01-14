@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 
 const API_BASE = '';
 
@@ -12,8 +12,10 @@ export default function Questions() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  const answeredCount = Object.keys(answers).length;
+  const totalQuestions = questions.length;
+
   useEffect(() => {
-    // If no questions in state, fetch from API
     if (!location.state?.questions) {
       fetchQuestions();
     }
@@ -50,7 +52,6 @@ export default function Questions() {
     setSubmitting(true);
     setError('');
 
-    // Create form data
     const formData = new FormData();
     Object.entries(answers).forEach(([key, value]) => {
       formData.append(key, value);
@@ -83,8 +84,10 @@ export default function Questions() {
     return (
       <div className="centered">
         <div className="container">
-          <h1>Loading questions...</h1>
-          <span className="spinner"></span>
+          <div className="loading-container">
+            <span className="spinner"></span>
+            <p>Loading your quiz...</p>
+          </div>
         </div>
       </div>
     );
@@ -94,8 +97,11 @@ export default function Questions() {
     return (
       <div className="centered">
         <div className="container">
-          <h1>Error</h1>
+          <h1>Something went wrong</h1>
           <div className="error-message">{error}</div>
+          <Link to="/upload" className="btn btn-primary" style={{ marginTop: '20px' }}>
+            Try Again
+          </Link>
         </div>
       </div>
     );
@@ -103,16 +109,42 @@ export default function Questions() {
 
   return (
     <div className="centered">
-      <div className="container">
-        <h1>Answer the Questions</h1>
+      <div className="container" style={{ maxWidth: '600px' }}>
+        <h1>Quiz Time</h1>
+        <p>
+          Progress: {answeredCount} / {totalQuestions} answered
+        </p>
+
+        {/* Progress bar */}
+        <div
+          style={{
+            width: '100%',
+            height: '4px',
+            background: 'var(--bg-secondary)',
+            borderRadius: '2px',
+            marginBottom: '32px',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              width: `${(answeredCount / totalQuestions) * 100}%`,
+              height: '100%',
+              background: 'var(--accent-gradient)',
+              borderRadius: '2px',
+              transition: 'width 0.3s ease',
+            }}
+          />
+        </div>
 
         <form onSubmit={handleSubmit}>
           {questions.map((q, qIndex) => (
             <div key={qIndex} className="question-block">
               <p>
-                <strong>
-                  {qIndex + 1}. {q.Question}
-                </strong>
+                <span style={{ color: 'var(--accent-primary)', marginRight: '8px' }}>
+                  Q{qIndex + 1}.
+                </span>
+                {q.Question}
               </p>
 
               {q.Options.map((option, optIndex) => (
@@ -124,14 +156,28 @@ export default function Questions() {
                     onChange={() => handleAnswerChange(qIndex, optIndex)}
                     required
                   />
-                  {option}
+                  <span>{option}</span>
                 </label>
               ))}
             </div>
           ))}
 
-          <button className="btn btn-primary" type="submit" disabled={submitting}>
-            {submitting ? 'Checking...' : 'Check Answers'}
+          <button
+            className="btn btn-primary"
+            type="submit"
+            disabled={submitting || answeredCount < totalQuestions}
+            style={{ width: '100%', marginTop: '16px' }}
+          >
+            {submitting ? (
+              <>
+                Checking Answers
+                <span className="spinner"></span>
+              </>
+            ) : answeredCount < totalQuestions ? (
+              `Answer all questions (${totalQuestions - answeredCount} remaining)`
+            ) : (
+              'Submit Answers'
+            )}
           </button>
         </form>
       </div>

@@ -1,0 +1,52 @@
+[
+    {
+        "Question": "What is the main disadvantage of the file-based system in terms of data management?",
+        "Options": ["Data redundancy", "Data consistency", "Data security", "Data isolation"],
+        "Ans": 1
+    },
+    {
+        "Question": "What is data redundancy in the context of a file-based system?",
+        "Options": ["A situation where data is stored in a single location", "A situation where data is not stored at all", "A situation where the same data is stored in multiple locations", "A situation where data is only accessible by one user"],
+        "Ans": 3
+    },
+    {
+        "Question": "What is the main purpose of a database management system?",
+        "Options": ["To store data in a single location", "To manipulate and retrieve data in various ways", "To provide security for data", "To manage user access to data"],
+        "Ans": 2
+    },
+    {
+        "Question": "What is the difference between a file-based system and a database system in terms of concurrency?",
+        "Options": ["A file-based system allows multiple users to access the same record simultaneously, while a database system does not", "A database system allows multiple users to access the same record simultaneously, while a file-based system does not", "A file-based system is more secure than a database system", "A database system is more secure than a file-based system"],
+        "Ans": 2
+    },
+    {
+        "Question": "What is data in the context of a database system?",
+        "Options": ["A collection of programs used to manage data", "A collection of files used to store data", "Factual information such as measurements or statistics about objects and concepts", "A type of software used to store and retrieve data"],
+        "Ans": 3
+    },
+    {
+        "Question": "What is the role of databases in business?",
+        "Options": ["To store customer information", "To manage employee data", "To track orders and products", "All of the above"],
+        "Ans": 4
+    },
+    {
+        "Question": "What is the main advantage of using a database management system over other methods of storing data?",
+        "Options": ["It provides a secure way to store data", "It allows for multiple users to access the same data simultaneously", "It provides a powerful tool to store, manipulate, and retrieve data", "It is a low-cost solution for storing data"],
+        "Ans": 3
+    },
+    {
+        "Question": "What is data isolation in the context of a file-based system?",
+        "Options": ["A situation where data is stored in a single location", "A situation where data is not accessible by other users", "A situation where data is difficult to retrieve due to being stored in various files", "A situation where data is only accessible by one user"],
+        "Ans": 3
+    },
+    {
+        "Question": "What is the main disadvantage of using a file-based system in terms of data integrity?",
+        "Options": ["It is difficult to make changes to the application programs to enforce new constraints", "It is easy to make changes to the application programs to enforce new constraints", "It provides a secure way to store data", "It allows for multiple users to access the same data simultaneously"],
+        "Ans": 1
+    },
+    {
+        "Question": "What is the main difference between a database system and a file-based system in terms of data management?",
+        "Options": ["A database system uses files to store data, while a file-based system uses a database", "A database system provides a powerful tool to store, manipulate, and retrieve data, while a file-based system does not", "A file-based system provides a secure way to store data, while a database system does not", "A database system is more expensive than a file-based system"],
+        "Ans": 2
+    }
+]
