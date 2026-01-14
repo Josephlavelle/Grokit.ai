@@ -1,0 +1,4 @@
+/* Reset defaults - App.css contains all styling */
+* {
+  box-sizing: border-box;
+}

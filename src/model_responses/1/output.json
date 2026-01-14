@@ -1,0 +1,52 @@
+[
+    {
+        "Question": "What is the main disadvantage of the file-based system in terms of data management?",
+        "Options": ["Data redundancy", "Data consistency", "Data security", "Data isolation"],
+        "Ans": 1
+    },
+    {
+        "Question": "What is data redundancy in the context of a file-based system?",
+        "Options": ["A situation where data is stored in a single location", "A situation where data is updated in multiple locations", "A situation where data is deleted from all locations", "A situation where data is not stored at all"],
+        "Ans": 2
+    },
+    {
+        "Question": "What is the main purpose of a database management system?",
+        "Options": ["To store data in a single location", "To manipulate and retrieve data in various ways", "To delete data from all locations", "To prevent data from being stored"],
+        "Ans": 2
+    },
+    {
+        "Question": "What is the difference between a file-based system and a database system in terms of concurrency?",
+        "Options": ["A file-based system allows multiple users to access the same record simultaneously", "A database system prevents multiple users from accessing the same record simultaneously", "A file-based system prevents multiple users from accessing the same record simultaneously", "A database system allows multiple users to access the same record simultaneously"],
+        "Ans": 4
+    },
+    {
+        "Question": "What is data in the context of a database system?",
+        "Options": ["A collection of programs used to manage information", "A collection of factual information about objects and concepts", "A collection of hardware used to store information", "A collection of software used to retrieve information"],
+        "Ans": 2
+    },
+    {
+        "Question": "What is the main advantage of using a database management system over other methods of storing information?",
+        "Options": ["It allows for manual data entry", "It allows for automatic data retrieval", "It allows for mechanical data processing and management", "It allows for deletion of all data"],
+        "Ans": 3
+    },
+    {
+        "Question": "What is the role of databases in business?",
+        "Options": ["To store information about friends and family", "To store information about customers, employees, and products", "To store information about hardware and software", "To store information about filing cabinets and spreadsheets"],
+        "Ans": 2
+    },
+    {
+        "Question": "What is the main problem with data integrity in a file-based system?",
+        "Options": ["It is easy to make changes to application programs to enforce new constraints", "It is difficult to make changes to application programs to enforce new constraints", "It is easy to maintain data consistency", "It is difficult to maintain data consistency"],
+        "Ans": 2
+    },
+    {
+        "Question": "What is data isolation in the context of a file-based system?",
+        "Options": ["A property that determines when and how changes made by one operation become visible to other concurrent users and systems", "A property that determines when and how changes made by one operation are deleted from all locations", "A property that determines when and how changes made by one operation are stored in a single location", "A property that determines when and how changes made by one operation are prevented from being made"],
+        "Ans": 1
+    },
+    {
+        "Question": "What is the main difference between a database system and a file-based system in terms of data storage?",
+        "Options": ["A database system stores data in a single location, while a file-based system stores data in multiple locations", "A database system stores data in multiple locations, while a file-based system stores data in a single location", "A database system stores data mechanically, while a file-based system stores data manually", "A database system stores data manually, while a file-based system stores data mechanically"],
+        "Ans": 1
+    }
+]

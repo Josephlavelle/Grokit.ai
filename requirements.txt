@@ -1,5 +1,6 @@
 groq
-dotenv
+python-dotenv
 flask
 flask-login
 flask-sqlalchemy
+flask-cors
