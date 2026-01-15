@@ -126,6 +126,38 @@ def get_quiz(quiz_id):
         "created_at": quiz.created_at.isoformat()
     })
 
+@api.route("/quizzes/<int:quiz_id>", methods=["DELETE"])
+@login_required
+def delete_quiz(quiz_id):
+    quiz = Quiz.query.filter_by(id=quiz_id, user_id=current_user.id).first()
+
+    if not quiz:
+        return jsonify({"error": "Quiz not found"}), 404
+
+    # Delete associated upload and file if exists
+    if quiz.upload:
+        upload = quiz.upload
+        # Delete the file from filesystem
+        if upload.filename and os.path.exists(upload.filename):
+            try:
+                os.remove(upload.filename)
+            except OSError:
+                pass  # File may already be deleted
+        #Delete input file as well
+        input_file = upload.filename.replace("output.json","input.txt")
+        if upload.filename and os.path.exists(input_file):
+            try:
+                os.remove(input_file)
+            except OSError:
+                pass  # File may already be deleted
+        db.session.delete(upload)
+
+    # Delete the quiz
+    db.session.delete(quiz)
+    db.session.commit()
+
+    return jsonify({"message": "Quiz deleted successfully"})
+
 @api.route("/feedback", methods=["POST"])
 @login_required
 def get_feedback():

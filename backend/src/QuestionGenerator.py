@@ -99,7 +99,8 @@ class QuestionGenerator():
                 to the end user the correct reasoning and help them learn.
 
                 Include no text other than the JSON in the response and have it formetted such that it can 
-                be immediately parsed using pythons json.load() function.
+                be immediately parsed using pythons json.load() function. Do not just copy and paste the correct
+                and incorrect answers as part of the answer. Right a useful explanation that answers the question.
                 Please output the feedback according the following example JSON:
                 [
                     {

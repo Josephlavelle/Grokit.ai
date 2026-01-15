@@ -7,6 +7,8 @@ export default function Library() {
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingQuiz, setLoadingQuiz] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -33,12 +35,24 @@ export default function Library() {
     }
   };
 
-  const openQuiz = async (quizId) => {
-    setLoadingQuiz(quizId);
+  const handleQuizClick = (quiz) => {
+    if (loadingQuiz || deleting) return;
+
+    if (selectedQuiz?.id === quiz.id) {
+      setSelectedQuiz(null);
+    } else {
+      setSelectedQuiz(quiz);
+    }
+  };
+
+  const openQuiz = async () => {
+    if (!selectedQuiz) return;
+
+    setLoadingQuiz(selectedQuiz.id);
     setError('');
 
     try {
-      const response = await fetch(`${API_BASE}/api/quizzes/${quizId}`, {
+      const response = await fetch(`${API_BASE}/api/quizzes/${selectedQuiz.id}`, {
         credentials: 'include',
       });
       const data = await response.json();
@@ -47,7 +61,6 @@ export default function Library() {
         throw new Error(data.error || 'Failed to load quiz');
       }
 
-      // Navigate to questions page with the quiz data
       navigate('/questions', {
         state: {
           questions: data.questions,
@@ -57,6 +70,37 @@ export default function Library() {
     } catch (err) {
       setError(err.message);
       setLoadingQuiz(null);
+    }
+  };
+
+  const deleteQuiz = async () => {
+    if (!selectedQuiz) return;
+
+    if (!window.confirm(`Are you sure you want to delete "${selectedQuiz.name || `Quiz ${selectedQuiz.id}`}"? This cannot be undone.`)) {
+      return;
+    }
+
+    setDeleting(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${API_BASE}/api/quizzes/${selectedQuiz.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete quiz');
+      }
+
+      // Remove from local state
+      setQuizzes(quizzes.filter(q => q.id !== selectedQuiz.id));
+      setSelectedQuiz(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -106,50 +150,112 @@ export default function Library() {
             </p>
           </div>
         ) : (
-          <ul className="quiz-list" style={{ marginBottom: '24px' }}>
-            {quizzes.map((quiz) => (
-              <li
-                key={quiz.id}
-                className="quiz-item"
-                onClick={() => !loadingQuiz && openQuiz(quiz.id)}
-                style={{
-                  cursor: loadingQuiz ? 'wait' : 'pointer',
-                  opacity: loadingQuiz && loadingQuiz !== quiz.id ? 0.5 : 1,
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ textAlign: 'left' }}>
-                    <span style={{ fontWeight: '500', display: 'block' }}>
-                      {quiz.name || `Quiz ${quiz.id}`}
-                    </span>
-                    <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                      {quiz.question_count} questions
-                    </span>
-                  </div>
-                  <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    {loadingQuiz === quiz.id ? (
-                      <span className="spinner" style={{ margin: 0 }}></span>
-                    ) : (
-                      <>
+          <>
+            <ul className="quiz-list" style={{ marginBottom: '16px' }}>
+              {quizzes.map((quiz) => {
+                const isSelected = selectedQuiz?.id === quiz.id;
+                return (
+                  <li
+                    key={quiz.id}
+                    className="quiz-item"
+                    onClick={() => handleQuizClick(quiz)}
+                    style={{
+                      cursor: loadingQuiz || deleting ? 'wait' : 'pointer',
+                      opacity: (loadingQuiz || deleting) && !isSelected ? 0.5 : 1,
+                      border: isSelected ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                      background: isSelected ? 'rgba(99, 102, 241, 0.1)' : 'var(--bg-secondary)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ textAlign: 'left' }}>
+                        <span style={{ fontWeight: '500', display: 'block' }}>
+                          {quiz.name || `Quiz ${quiz.id}`}
+                        </span>
+                        <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                          {quiz.question_count} questions
+                        </span>
+                      </div>
+                      <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
                           {quiz.created_at && formatDate(quiz.created_at)}
                         </span>
-                        <span style={{ color: 'var(--accent-primary)', fontSize: '18px' }}>→</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+                        {isSelected ? (
+                          <span style={{ color: 'var(--accent-primary)', fontSize: '16px' }}>✓</span>
+                        ) : (
+                          <span style={{ color: 'var(--text-muted)', fontSize: '14px' }}>○</span>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {/* Action buttons when quiz is selected */}
+            {selectedQuiz && (
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '12px',
+                  marginBottom: '24px',
+                }}
+              >
+                <button
+                  onClick={deleteQuiz}
+                  disabled={loadingQuiz || deleting}
+                  className="btn btn-secondary"
+                  style={{
+                    flex: 1,
+                    borderColor: 'var(--error)',
+                    color: 'var(--error)',
+                  }}
+                >
+                  {deleting ? (
+                    <>
+                      Deleting
+                      <span className="spinner"></span>
+                    </>
+                  ) : (
+                    'Delete Quiz'
+                  )}
+                </button>
+                <button
+                  onClick={openQuiz}
+                  disabled={loadingQuiz || deleting}
+                  className="btn btn-primary"
+                  style={{ flex: 1 }}
+                >
+                  {loadingQuiz ? (
+                    <>
+                      Loading
+                      <span className="spinner"></span>
+                    </>
+                  ) : (
+                    'Take Quiz'
+                  )}
+                </button>
+              </div>
+            )}
+
+            {!selectedQuiz && (
+              <p style={{
+                fontSize: '13px',
+                color: 'var(--text-muted)',
+                marginBottom: '24px',
+                fontStyle: 'italic'
+              }}>
+                Select a quiz to take or delete it
+              </p>
+            )}
+          </>
         )}
 
         <div className="button-group">
+        <Link to="/" className="btn btn-secondary">
+            Back to Home
+          </Link>
           <Link to="/upload" className="btn btn-primary">
             Create New Quiz
-          </Link>
-          <Link to="/" className="btn btn-secondary">
-            Back to Home
           </Link>
         </div>
       </div>
