@@ -17,7 +17,7 @@ api = Blueprint("api", __name__, url_prefix="/api")
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "model_responses")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-app.config["MAX_CONTENT_LENGTH"] = 1 * 1024 * 1024
+app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10 MB to support larger input files
 app.secret_key = os.getenv("APP_SECRET_KEY")
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("SQLALCHEMY_DATABASE_URI")
 
@@ -65,10 +65,25 @@ def upload():
     if not file.filename.endswith(".txt"):
         return jsonify({"error": "Only .txt files are allowed"}), 400
 
-    # Generate response to session
-    text = file.read().decode("utf-8")
-    client = QuestionGenerator(user=current_user)
-    mcq_data = client.request_quiz(input_text=text, quiz_name=name)
+    # Read and decode file content
+    try:
+        file_bytes = file.read()
+        # Try UTF-8 first, fall back to latin-1 which accepts any byte sequence
+        try:
+            text = file_bytes.decode("utf-8")
+        except UnicodeDecodeError:
+            text = file_bytes.decode("latin-1")
+    except Exception as e:
+        return jsonify({"error": f"Failed to read file: {str(e)}"}), 400
+
+    try:
+        client = QuestionGenerator(user=current_user)
+        mcq_data = client.request_quiz(input_text=text, quiz_name=name)
+    except RuntimeError as e:
+        return jsonify({"error": str(e)}), 500
+    except Exception as e:
+        return jsonify({"error": f"Failed to generate quiz: {str(e)}"}), 500
+
     session["questions_json"] = mcq_data
 
     return jsonify({
