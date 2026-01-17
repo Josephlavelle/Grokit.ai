@@ -100,6 +100,10 @@ docker-compose up --build
 ## TODO
 1. ~~Dockerize~~ ✓
 2. Deploy on AWS
+    a. ~~read/write to S3~~
+    b. Swap DB to use RDS
+    c. Upload docker container to ECR
+    d. Deploy on ECS
 3. Get new domain
 4. Allow combining quizzes into larger exams (low priority)
  

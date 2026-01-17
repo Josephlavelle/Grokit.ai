@@ -5,6 +5,7 @@ import json
 import dotenv
 from models import User, Upload, Quiz, db
 from datetime import datetime
+import s3
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
@@ -131,31 +132,22 @@ class QuestionGenerator():
 
         logger.info(f"Generated {len(all_questions)} total questions from {num_chunks} chunks")
 
-        # Save files and database records
-        output_path = file_path + f"{self.user.id}/"
-        output_filename = output_path + f"{quiz_name}_output.json"
-        input_filename = output_path + f"{quiz_name}_input.txt"
+        # Save files to S3 and database records
+        output_key = f"model_responses/{self.user.id}/{quiz_name}_output.json"
+        input_key = f"model_responses/{self.user.id}/{quiz_name}_input.txt"
 
-        try:
-            os.makedirs(output_path, exist_ok=True)
-        except OSError as e:
-            logger.error(f"Error creating directory {output_path}")
-
-        with open(input_filename, mode="w") as f:
-            f.write(input_text)
-
-        with open(output_filename, mode="w") as f:
-            f.write(json.dumps(all_questions, indent=2))
+        s3.upload_file(input_key, input_text)
+        s3.upload_file(output_key, json.dumps(all_questions, indent=2))
 
         # Save metadata to db
-        input_upload = self.make_upload(input_filename)
-        output_upload = self.make_upload(output_filename)
+        input_upload = self.make_upload(input_key)
+        output_upload = self.make_upload(output_key)
 
         db.session.add(input_upload)
         db.session.add(output_upload)
         db.session.commit()
 
-        quiz = self.make_quiz(all_questions, output_filename)
+        quiz = self.make_quiz(all_questions, output_key)
         db.session.add(quiz)
         db.session.commit()
 
@@ -243,34 +235,24 @@ class QuestionGenerator():
             model=model,
         )
 
-        output_path = file_path + f"{self.user.id}/"
-        output_filename = output_path + f"{quiz_name}_output.json"
-        input_filename = output_path + f"{quiz_name}_input.txt"
+        output_key = f"model_responses/{self.user.id}/{quiz_name}_output.json"
+        input_key = f"model_responses/{self.user.id}/{quiz_name}_input.txt"
 
-        try:
-            os.makedirs(output_path, exist_ok=True)
-        except OSError as e:
-            logger.error(f"Error creating directory {output_path}")
+        response_content = chat_completion.choices[0].message.content
+        s3.upload_file(input_key, input_text)
+        s3.upload_file(output_key, response_content)
 
-        with open(input_filename, mode="w") as f:
-            f.write(input_text)
-
-        with open(output_filename, mode="w") as f:
-            f.write(chat_completion.choices[0].message.content)
-
-        f = open(output_filename)
-        questions_raw = f.read()
-        output_json = json.loads(questions_raw)
+        output_json = json.loads(response_content)
 
         # Save metadata to db
-        input_upload = self.make_upload(input_filename)
-        output_upload = self.make_upload(output_filename)
+        input_upload = self.make_upload(input_key)
+        output_upload = self.make_upload(output_key)
 
         db.session.add(input_upload)
         db.session.add(output_upload)
         db.session.commit()
 
-        quiz = self.make_quiz(output_json, output_filename)
+        quiz = self.make_quiz(output_json, output_key)
         db.session.add(quiz)
         db.session.commit()
 

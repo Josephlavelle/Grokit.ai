@@ -13,7 +13,7 @@ services:
       # Persist database and uploaded files
       - app_data:/app/instance
       - model_responses:/app/model_responses
-      - ~/.aws:/root/.aws:ro
+      - ~/.aws:/root/.aws
     restart: unless-stopped
 
 volumes:

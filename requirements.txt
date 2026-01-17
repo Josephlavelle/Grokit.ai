@@ -5,3 +5,4 @@ flask-login
 flask-sqlalchemy
 flask-cors
 boto3
+botocore[crt]

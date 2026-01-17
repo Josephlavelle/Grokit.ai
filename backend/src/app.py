@@ -6,6 +6,7 @@ import dotenv
 import json
 from QuestionGenerator import QuestionGenerator
 from models import db, User, Quiz
+import s3
 
 dotenv.load_dotenv()
 
@@ -163,22 +164,15 @@ def delete_quiz(quiz_id):
     if not quiz:
         return jsonify({"error": "Quiz not found"}), 404
 
-    # Delete files from filesystem but keep db records
+    # Delete files from S3 but keep db records
     if quiz.upload:
         upload = quiz.upload
-        # Delete the output file from filesystem
-        if upload.filename and os.path.exists(upload.filename):
-            try:
-                os.remove(upload.filename)
-            except OSError:
-                pass  # File may already be deleted
-        # Delete input file as well
-        input_file = upload.filename.replace("output.json", "input.txt")
-        if upload.filename and os.path.exists(input_file):
-            try:
-                os.remove(input_file)
-            except OSError:
-                pass  # File may already be deleted
+        if upload.filename:
+            # Delete the output file from S3
+            s3.delete_file(upload.filename)
+            # Delete input file as well
+            input_key = upload.filename.replace("output.json", "input.txt")
+            s3.delete_file(input_key)
 
     # Soft delete - mark as deleted instead of removing from db
     quiz.status = "deleted"
