@@ -87,4 +87,4 @@ Known Bugs:
 
 TODO:
 1. Allow Combining of Quizzes into larger exams
-2. Support larger file inputs
+2. Improve quiz accuracy
