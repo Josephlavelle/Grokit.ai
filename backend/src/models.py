@@ -34,6 +34,7 @@ class Quiz(db.Model):
     upload_id = db.Column(db.Integer, db.ForeignKey("upload.id"), nullable=True)
     content = db.Column(db.JSON, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False)
+    status = db.Column(db.String(20), nullable=False, default="created")
 
     user_id = db.Column(
         db.Integer,

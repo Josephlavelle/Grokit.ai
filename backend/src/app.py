@@ -94,7 +94,7 @@ def upload():
 @api.route("/quizzes")
 @login_required
 def get_quizzes():
-    quizzes = Quiz.query.filter_by(user_id=current_user.id).order_by(Quiz.created_at.desc()).all()
+    quizzes = Quiz.query.filter_by(user_id=current_user.id, status="created").order_by(Quiz.created_at.desc()).all()
 
     def get_quiz_name(quiz):
         if quiz.upload and quiz.upload.filename:
@@ -119,7 +119,7 @@ def get_quizzes():
 @api.route("/quizzes/<int:quiz_id>")
 @login_required
 def get_quiz(quiz_id):
-    quiz = Quiz.query.filter_by(id=quiz_id, user_id=current_user.id).first()
+    quiz = Quiz.query.filter_by(id=quiz_id, user_id=current_user.id, status="created").first()
 
     if not quiz:
         return jsonify({"error": "Quiz not found"}), 404
@@ -149,26 +149,25 @@ def delete_quiz(quiz_id):
     if not quiz:
         return jsonify({"error": "Quiz not found"}), 404
 
-    # Delete associated upload and file if exists
+    # Delete files from filesystem but keep db records
     if quiz.upload:
         upload = quiz.upload
-        # Delete the file from filesystem
+        # Delete the output file from filesystem
         if upload.filename and os.path.exists(upload.filename):
             try:
                 os.remove(upload.filename)
             except OSError:
                 pass  # File may already be deleted
-        #Delete input file as well
-        input_file = upload.filename.replace("output.json","input.txt")
+        # Delete input file as well
+        input_file = upload.filename.replace("output.json", "input.txt")
         if upload.filename and os.path.exists(input_file):
             try:
                 os.remove(input_file)
             except OSError:
                 pass  # File may already be deleted
-        db.session.delete(upload)
 
-    # Delete the quiz
-    db.session.delete(quiz)
+    # Soft delete - mark as deleted instead of removing from db
+    quiz.status = "deleted"
     db.session.commit()
 
     return jsonify({"message": "Quiz deleted successfully"})
