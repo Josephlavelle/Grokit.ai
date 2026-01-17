@@ -82,62 +82,6 @@ class QuestionGenerator():
         logger.info(f"Split text into {len(chunks)} chunks")
         return chunks
 
-    def _request_quiz_chunk(self, chunk_text, num_questions, model, temperature):
-        """Generate quiz questions from a single chunk of text.
-
-        Args:
-            chunk_text: The text chunk to generate questions from
-            num_questions: Number of questions to generate for this chunk
-            model: The LLM model to use
-            temperature: Temperature setting for generation
-
-        Returns:
-            List of question dictionaries
-        """
-        additional_instructions = f"""You are a study assistant tasked with helping prepare study content for the student
-            using it. You will be given a text-based input that is either a lecture transcript or textbook exerpt.
-            Please generate a list of {num_questions} multiple choice questions with 4 options, only one of which is correct. These questions
-            should summarize key topics in the text input to help the studet understand the key topics.
-            Please include no text other than the JSON in the response and have it formetted such that it can
-            be immediately parsed using pythons json.load() function.
-            Please output the questions according the following example JSON:
-            [
-                {{
-                    "Question": "What is the right Answer?",
-                    "Options":[ "Option 1", "Option 2", "Right Option", "Option 4"]
-                    "Ans": 3
-                }}
-            ],
-            etc...
-            """
-
-        try:
-            chat_completion = self.client.chat.completions.create(
-                messages=[
-                    {
-                        "role": "system",
-                        "content": self.instructions + additional_instructions
-                    },
-                    {
-                        "role": "user",
-                        "content": chunk_text
-                    }
-                ],
-                temperature=temperature,
-                model=model,
-            )
-        except Exception as e:
-            logger.error(f"Groq API error for chunk: {e}")
-            raise RuntimeError(f"Failed to generate questions from chunk: {e}")
-
-        response_content = chat_completion.choices[0].message.content
-        try:
-            return json.loads(response_content)
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse chunk response: {e}")
-            logger.debug(f"Response content: {response_content}")
-            return []
-
     def request_quiz(self, input_text, quiz_name, model="llama-3.3-70b-versatile", temperature=0, instructions_override="", file_path="model_responses/"):
         """Generate a quiz from input text, with automatic chunking for large inputs.
 
@@ -217,6 +161,71 @@ class QuestionGenerator():
 
         return all_questions
 
+    def _request_quiz_chunk(self, chunk_text, num_questions, model, temperature):
+        """Generate quiz questions from a single chunk of text.
+
+        Args:
+            chunk_text: The text chunk to generate questions from
+            num_questions: Number of questions to generate for this chunk
+            model: The LLM model to use
+            temperature: Temperature setting for generation
+
+        Returns:
+            List of question dictionaries
+        """
+        additional_instructions = f"""You are a study assistant tasked with generating accurate multiple-choice questions from a provided lecture transcript or textbook excerpt.
+            Rules:
+            Use only information explicitly stated in the provided text. Do not use outside knowledge.
+            Generate a total of {num_questions} questions.
+            Each question must test an important concept from the text.
+            Each question must have exactly 4 options.
+            Only one option may be correct.
+            All incorrect options must be clearly wrong and not partially correct.
+            Provide a verbatim citation from the text that supports the correct answer.
+            Validation step (must be followed):
+            Before outputting, verify that each correct answer is directly supported by its citation.
+            If any question is ambiguous or unsupported, revise it.
+
+            Output format:
+            Output only valid JSON (no extra text).
+            The JSON must be immediately parseable by json.load().
+            [
+                {{
+                    "Question": "Question text here?",
+                    "Options": ["Option A", "Option B", "Option C", "Option D"],
+                    "Ans": 2,
+                    "Citation": "Exact sentence from the text that proves the answer."
+                }}
+            ]
+            """
+
+        try:
+            chat_completion = self.client.chat.completions.create(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": self.instructions + additional_instructions
+                    },
+                    {
+                        "role": "user",
+                        "content": chunk_text
+                    }
+                ],
+                temperature=temperature,
+                model=model,
+            )
+        except Exception as e:
+            logger.error(f"Groq API error for chunk: {e}")
+            raise RuntimeError(f"Failed to generate questions from chunk: {e}")
+
+        response_content = chat_completion.choices[0].message.content
+        try:
+            return json.loads(response_content)
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse chunk response: {e}")
+            logger.debug(f"Response content: {response_content}")
+            return []
+
     def _request_quiz_single(self, input_text, quiz_name, model, temperature, instructions_override, file_path):
         """Original single-request quiz generation for backward compatibility with custom instructions."""
         chat_completion = self.client.chat.completions.create(
@@ -270,23 +279,35 @@ class QuestionGenerator():
     def request_feedback(self, input_text, model= "llama-3.3-70b-versatile", temperature = 0, additional_instructions = "", file_path = "feedback/"):
         if not additional_instructions:
             additional_instructions = """
-                Given the below incorrectly answered quiz questions. Please generate a 
-                brief response on why the chosen answers are incorrect and describe which answer is correct. I will leave to you to 
-                determine the response length but please favour shorter answers so long as they convey 
-                to the end user the correct reasoning and help them learn.
+            You are a study assistant generating feedback for incorrectly answered quiz questions.
+            
+            Rules:
+            Use only information explicitly stated in the provided source text.
+            Do not reference quiz options, answer numbers, or the student’s selected answer.
+            Do not speculate or introduce new facts.
+            Explain the correct concept clearly and briefly.
+            If the source text does not contain enough information to explain the concept, state that.
 
-                Include no text other than the JSON in the response and have it formetted such that it can 
-                be immediately parsed using pythons json.load() function. Do not just copy and paste the correct
-                and incorrect answers as part of the answer. Right a useful explanation that answers the question.
-                Please output the feedback according the following example JSON:
-                [
-                    {
-                        "number": 1
-                        "question": "<Question From Quiz>",
-                        "feedback": "<Explanation for user answer being wrong, and correct answer being right>"
-                    }
-                ],
-                """
+            Task:
+            For each incorrectly answered question:
+            Provide a short explanation of the correct concept and reasoning, grounded in the source text.
+
+            Validation step (must be followed):
+            Verify that every statement is directly supported by the source text.
+            Remove or revise any unsupported claims before outputting.
+
+            Output format:
+            Output only valid JSON (no extra text).
+            The JSON must be immediately parseable by json.load().
+            Output only valid JSON that conforms to the below format
+            [
+                {
+                    "number": 1
+                    "question": "<Question From Quiz>",
+                    "feedback": "<Explanation for user answer being wrong, and correct answer being right>"
+                }
+            ],
+            """
         chat_completion = self.client.chat.completions.create(
             messages=[
                 {

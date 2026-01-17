@@ -87,4 +87,3 @@ Known Bugs:
 
 TODO:
 1. Allow Combining of Quizzes into larger exams
-2. Improve quiz accuracy
