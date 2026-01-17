@@ -1,4 +1,4 @@
-from flask import Flask, request, session, jsonify, Blueprint
+from flask import Flask, request, session, jsonify, Blueprint, send_from_directory
 from flask_cors import CORS
 from flask_login import LoginManager, login_required, current_user
 import os
@@ -8,10 +8,14 @@ from QuestionGenerator import QuestionGenerator
 from models import db, User, Quiz
 
 dotenv.load_dotenv()
-app = Flask(__name__)
 
-# CORS configuration for React frontend
-CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
+# Configure static folder for production (React build output)
+static_folder = os.path.join(os.path.dirname(__file__), 'static')
+app = Flask(__name__, static_folder=static_folder, static_url_path='')
+
+# CORS configuration - allow localhost for dev, same-origin works for production
+cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
+CORS(app, supports_credentials=True, origins=cors_origins)
 
 api = Blueprint("api", __name__, url_prefix="/api")
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "model_responses")
@@ -46,7 +50,17 @@ with app.app_context():
 
 @app.route("/")
 def home():
+    # Serve React app in production, API info in development
+    if os.path.exists(os.path.join(app.static_folder or '', 'index.html')):
+        return send_from_directory(app.static_folder, 'index.html')
     return jsonify({"message": "Groker API"})
+
+@app.errorhandler(404)
+def not_found(e):
+    # Serve React app for client-side routing (production only)
+    if app.static_folder and os.path.exists(os.path.join(app.static_folder, 'index.html')):
+        return send_from_directory(app.static_folder, 'index.html')
+    return jsonify({"error": "Not found"}), 404
 
 @api.route("/me")
 def me():

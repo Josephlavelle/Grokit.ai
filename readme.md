@@ -25,38 +25,50 @@ An AI-powered quiz generation application that creates multiple-choice questions
 ## Setup
 
 ### Prerequisites
-- Python 3.8+
-- Node.js 18+
+- Docker and Docker Compose
 - Groq API key
 
-### Backend Setup
+### Quick Start
 
-```bash
-cd backend/src
-pip install -r requirements.txt
+1. Clone the repository and create a `.env` file in the project root:
 ```
-
-Create a `.env` file:
-```
-APP_SECRET_KEY=your-secret-key
-SQLALCHEMY_DATABASE_URI=sqlite:///app.db
 GROQ_API_KEY=your-groq-api-key
+APP_SECRET_KEY=your-secret-key
+SIGNUP_WHITELIST=user1@example.com,user2@example.com  # Optional: restrict signups
 ```
 
-Run the backend:
+2. Build and run with Docker Compose:
 ```bash
-python app.py
+docker-compose up --build
 ```
 
-### Frontend Setup
+3. Access the app at `http://localhost:5050`
+
+### Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GROQ_API_KEY` | Yes | Your Groq API key |
+| `APP_SECRET_KEY` | Yes | Flask session secret key |
+| `SIGNUP_WHITELIST` | No | Comma-separated list of allowed signup emails |
+| `CORS_ORIGINS` | No | Allowed CORS origins (default: localhost) |
+
+### Docker Commands
 
 ```bash
-cd frontend
-npm install
-npm run dev
-```
+# Start the app
+docker-compose up -d
 
-The frontend runs on `http://localhost:5173` and proxies API requests to the backend on `http://localhost:5050`.
+# View logs
+docker-compose logs -f
+
+# Stop the app
+docker-compose down
+
+# Reset database (removes all data)
+docker-compose down -v
+docker-compose up --build
+```
 
 ## Usage
 
@@ -81,9 +93,13 @@ The frontend runs on `http://localhost:5173` and proxies API requests to the bac
 | GET/POST | `/questions` | Get questions / Submit answers |
 | POST | `/api/feedback` | Get AI feedback on results |
 
-Known Bugs:
-1. LLM Generated quiz errors can sometimes be incorrect
-2. LLM Generated quiz feedback can sometimes not align with supplied quiz - Need to provide LLM with full question context.
+## Known Bugs
+1. LLM generated quiz answers can sometimes be incorrect
+2. LLM generated feedback can sometimes not align with the quiz - needs full question context
 
-TODO:
-1. Allow Combining of Quizzes into larger exams
+## TODO
+1. ~~Dockerize~~ ✓
+2. Deploy on AWS
+3. Get new domain
+4. Allow combining quizzes into larger exams (low priority)
+ 

@@ -1,0 +1,21 @@
+services:
+  app:
+    build: .
+    ports:
+      - "5050:5050"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - APP_SECRET_KEY=${APP_SECRET_KEY}
+      - SQLALCHEMY_DATABASE_URI=sqlite:////app/instance/app.db
+      - SIGNUP_WHITELIST=${SIGNUP_WHITELIST:-}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5173}
+    volumes:
+      # Persist database and uploaded files
+      - app_data:/app/instance
+      - model_responses:/app/model_responses
+      - ~/.aws:/root/.aws:ro
+    restart: unless-stopped
+
+volumes:
+  app_data:
+  model_responses:
