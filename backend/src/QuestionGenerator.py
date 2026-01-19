@@ -3,7 +3,7 @@ from groq import Groq
 import logging
 import json
 import dotenv
-from models import User, Upload, Quiz, db
+from firestore import User, Upload, Quiz
 from datetime import datetime
 import s3
 
@@ -139,17 +139,15 @@ class QuestionGenerator():
         s3.upload_file(input_key, input_text)
         s3.upload_file(output_key, json.dumps(all_questions, indent=2))
 
-        # Save metadata to db
+        # Save metadata to Firestore
         input_upload = self.make_upload(input_key)
         output_upload = self.make_upload(output_key)
 
-        db.session.add(input_upload)
-        db.session.add(output_upload)
-        db.session.commit()
+        input_upload.save()
+        output_upload.save()
 
-        quiz = self.make_quiz(all_questions, output_key)
-        db.session.add(quiz)
-        db.session.commit()
+        quiz = self.make_quiz(all_questions, output_upload.id)
+        quiz.save()
 
         return all_questions
 
@@ -244,17 +242,15 @@ class QuestionGenerator():
 
         output_json = json.loads(response_content)
 
-        # Save metadata to db
+        # Save metadata to Firestore
         input_upload = self.make_upload(input_key)
         output_upload = self.make_upload(output_key)
 
-        db.session.add(input_upload)
-        db.session.add(output_upload)
-        db.session.commit()
+        input_upload.save()
+        output_upload.save()
 
-        quiz = self.make_quiz(output_json, output_key)
-        db.session.add(quiz)
-        db.session.commit()
+        quiz = self.make_quiz(output_json, output_upload.id)
+        quiz.save()
 
         return output_json
     
@@ -311,10 +307,5 @@ class QuestionGenerator():
     def make_upload(self, filename):
         return Upload(filename=filename, user_id=self.user.id, content = "output", created_at=datetime.now())
     
-    def make_quiz(self, quiz_json, filename = None):
-        #TODO at some point this should refactor to use ID rather than filename
-        if filename:
-            output_file = Upload.query.filter_by(filename=filename).first()
-            return Quiz(user_id=self.user.id, content = quiz_json, upload_id = output_file.id, created_at=datetime.now())
-        else:
-            return Quiz(user_id=self.user.id, content = quiz_json, upload_id = None, created_at=datetime.now())
+    def make_quiz(self, quiz_json, upload_id=None):
+        return Quiz(user_id=self.user.id, content=quiz_json, upload_id=upload_id, created_at=datetime.now())

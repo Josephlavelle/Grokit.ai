@@ -1,7 +1,7 @@
 import os
 from flask import Blueprint, request, jsonify
 from flask_login import login_user, logout_user, current_user
-from models import db, User
+from firestore import User
 
 auth = Blueprint("auth", __name__, url_prefix="/auth")
 
@@ -26,14 +26,12 @@ def signup():
     if whitelist is not None and email.lower() not in whitelist:
         return jsonify({"error": "This app is not accepting new users at this time"}), 403
 
-    if User.query.filter_by(email=email).first():
+    if User.get_by_email(email):
         return jsonify({"error": "User already exists"}), 400
 
     user = User(email=email)
     user.set_password(password)
-
-    db.session.add(user)
-    db.session.commit()
+    user.save()
 
     login_user(user)
     return jsonify({"user": {"id": user.id, "email": user.email}})
@@ -44,7 +42,7 @@ def login():
     email = data.get("email")
     password = data.get("password")
 
-    user = User.query.filter_by(email=email).first()
+    user = User.get_by_email(email)
     if user and user.check_password(password):
         login_user(user)
         return jsonify({"user": {"id": user.id, "email": user.email}})

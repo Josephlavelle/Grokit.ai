@@ -5,7 +5,7 @@ import os
 import dotenv
 import json
 from QuestionGenerator import QuestionGenerator
-from models import db, User, Quiz
+from firestore import User, Quiz
 import s3
 
 dotenv.load_dotenv()
@@ -19,19 +19,12 @@ cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
 CORS(app, supports_credentials=True, origins=cors_origins)
 
 api = Blueprint("api", __name__, url_prefix="/api")
-UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "model_responses")
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10 MB to support larger input files
 app.secret_key = os.getenv("APP_SECRET_KEY")
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("SQLALCHEMY_DATABASE_URI")
 
 # Import and register auth blueprint
 from auth import auth
 app.register_blueprint(auth)
-
-# Init DB
-db.init_app(app)
 
 # Init Login Service
 login_manager = LoginManager()
@@ -40,14 +33,11 @@ login_manager.init_app(app)
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return User.get_by_id(user_id)
 
 @login_manager.unauthorized_handler
 def unauthorized():
     return jsonify({"error": "Authentication required"}), 401
-
-with app.app_context():
-    db.create_all()
 
 @app.route("/")
 def home():
@@ -62,6 +52,15 @@ def not_found(e):
     if app.static_folder and os.path.exists(os.path.join(app.static_folder, 'index.html')):
         return send_from_directory(app.static_folder, 'index.html')
     return jsonify({"error": "Not found"}), 404
+
+@app.errorhandler(500)
+def internal_error(e):
+    return jsonify({"error": f"Internal server error: {str(e)}"}), 500
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    # Return JSON instead of HTML for all errors
+    return jsonify({"error": str(e)}), 500
 
 @api.route("/me")
 def me():
@@ -109,7 +108,7 @@ def upload():
 @api.route("/quizzes")
 @login_required
 def get_quizzes():
-    quizzes = Quiz.query.filter_by(user_id=current_user.id, status="created").order_by(Quiz.created_at.desc()).all()
+    quizzes = Quiz.get_by_user(current_user.id, status="created")
 
     def get_quiz_name(quiz):
         if quiz.upload and quiz.upload.filename:
@@ -124,17 +123,17 @@ def get_quizzes():
             {
                 "id": q.id,
                 "name": get_quiz_name(q),
-                "created_at": q.created_at.isoformat(),
+                "created_at": q.created_at.isoformat() if hasattr(q.created_at, 'isoformat') else str(q.created_at),
                 "question_count": len(q.content) if q.content else 0
             }
             for q in quizzes
         ]
     })
 
-@api.route("/quizzes/<int:quiz_id>")
+@api.route("/quizzes/<quiz_id>")
 @login_required
 def get_quiz(quiz_id):
-    quiz = Quiz.query.filter_by(id=quiz_id, user_id=current_user.id, status="created").first()
+    quiz = Quiz.get_by_user_and_id(current_user.id, quiz_id, status="created")
 
     if not quiz:
         return jsonify({"error": "Quiz not found"}), 404
@@ -153,13 +152,13 @@ def get_quiz(quiz_id):
         "id": quiz.id,
         "name": get_quiz_name(quiz),
         "questions": quiz.content,
-        "created_at": quiz.created_at.isoformat()
+        "created_at": quiz.created_at.isoformat() if hasattr(quiz.created_at, 'isoformat') else str(quiz.created_at)
     })
 
-@api.route("/quizzes/<int:quiz_id>", methods=["DELETE"])
+@api.route("/quizzes/<quiz_id>", methods=["DELETE"])
 @login_required
 def delete_quiz(quiz_id):
-    quiz = Quiz.query.filter_by(id=quiz_id, user_id=current_user.id).first()
+    quiz = Quiz.get_by_user_and_id(current_user.id, quiz_id)
 
     if not quiz:
         return jsonify({"error": "Quiz not found"}), 404
@@ -176,7 +175,7 @@ def delete_quiz(quiz_id):
 
     # Soft delete - mark as deleted instead of removing from db
     quiz.status = "deleted"
-    db.session.commit()
+    quiz.save()
 
     return jsonify({"message": "Quiz deleted successfully"})
 
