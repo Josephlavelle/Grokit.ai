@@ -1,4 +1,7 @@
 import os
+import json
+import base64
+import tempfile
 from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -6,6 +9,20 @@ from flask_login import UserMixin
 from datetime import datetime
 
 _db = None
+
+def _setup_credentials():
+    """Set up Firebase credentials from environment variable if provided."""
+    creds_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON")
+    if creds_json:
+        # Decode base64 credentials and write to temp file
+        creds_data = base64.b64decode(creds_json)
+        temp_file = tempfile.NamedTemporaryFile(mode='wb', suffix='.json', delete=False)
+        temp_file.write(creds_data)
+        temp_file.close()
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_file.name
+
+# Set up credentials on module load
+_setup_credentials()
 
 def get_db():
     """Get or create Firestore client singleton."""

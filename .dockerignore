@@ -38,7 +38,12 @@ backend/src/model_responses
 .env
 .env.*
 
+# Firebase credentials (mounted at runtime)
+firebase-key.json
+
 # Misc
 *.md
 .ipynb_checkpoints
 inputs
+DNS.txt
+deploy.sh

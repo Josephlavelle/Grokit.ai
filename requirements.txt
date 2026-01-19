@@ -2,7 +2,8 @@ groq
 python-dotenv
 flask
 flask-login
-flask-sqlalchemy
 flask-cors
 boto3
 botocore[crt]
+google-cloud-firestore
+flask-limiter

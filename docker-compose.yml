@@ -4,15 +4,8 @@ services:
     platform: linux/amd64
     ports:
       - "5050:5050"
-    environment:
-      - GROQ_API_KEY=${GROQ_API_KEY}
-      - APP_SECRET_KEY=${APP_SECRET_KEY}
-      - SIGNUP_WHITELIST=${SIGNUP_WHITELIST:-}
-      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5173}
-      - GOOGLE_APPLICATION_CREDENTIALS=/app/firebase-key.json
-      - FROM_EMAIL=${FROM_EMAIL:-noreply@grokit.app}
-      - APP_URL=${APP_URL:-http://localhost:5050}
-      - AWS_REGION=${AWS_REGION:-us-east-1}
+    env_file:
+      - ./.env
     volumes:
       - ~/.aws:/root/.aws
       - ./firebase-key.json:/app/firebase-key.json:ro
