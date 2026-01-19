@@ -248,3 +248,24 @@ class Quiz:
             if status is None or quiz.status == status:
                 return quiz
         return None
+
+
+def get_signup_whitelist():
+    """Get list of whitelisted emails from Firestore config.
+
+    Returns:
+        list: List of whitelisted emails (lowercase), or None if whitelist is disabled.
+    """
+    try:
+        db = get_db()
+        doc = db.collection("config").document("signup_whitelist").get()
+        if not doc.exists:
+            return None  # No whitelist = open signups
+        data = doc.to_dict()
+        emails = data.get("emails", [])
+        if not emails:
+            return None
+        return [email.lower() for email in emails]
+    except Exception:
+        # If we can't reach Firestore, fail open (allow signups)
+        return None

@@ -1,16 +1,8 @@
-import os
 from flask import Blueprint, request, jsonify
 from flask_login import login_user, logout_user, current_user
-from firestore import User
+from firestore import User, get_signup_whitelist
 
 auth = Blueprint("auth", __name__, url_prefix="/auth")
-
-def get_signup_whitelist():
-    """Get list of whitelisted emails from environment variable."""
-    whitelist = os.environ.get("SIGNUP_WHITELIST", "")
-    if not whitelist:
-        return None  # No whitelist = open signups
-    return [email.strip().lower() for email in whitelist.split(",") if email.strip()]
 
 @auth.route("/signup", methods=["POST"])
 def signup():

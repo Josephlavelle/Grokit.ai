@@ -34,7 +34,6 @@ An AI-powered quiz generation application that creates multiple-choice questions
 ```
 GROQ_API_KEY=your-groq-api-key
 APP_SECRET_KEY=your-secret-key
-SIGNUP_WHITELIST=user1@example.com,user2@example.com  # Optional: restrict signups
 ```
 
 2. Build and run with Docker Compose:
@@ -50,8 +49,18 @@ docker-compose up --build
 |----------|----------|-------------|
 | `GROQ_API_KEY` | Yes | Your Groq API key |
 | `APP_SECRET_KEY` | Yes | Flask session secret key |
-| `SIGNUP_WHITELIST` | No | Comma-separated list of allowed signup emails |
+| `GOOGLE_APPLICATION_CREDENTIALS_JSON` | Yes | Base64-encoded Firebase service account JSON |
+| `S3_BUCKET` | Yes | S3 bucket name for file storage |
 | `CORS_ORIGINS` | No | Allowed CORS origins (default: localhost) |
+
+### Signup Whitelist
+
+To restrict signups to specific emails, create a Firestore document:
+- Collection: `config`
+- Document ID: `signup_whitelist`
+- Field: `emails` (array of allowed email strings)
+
+If this document doesn't exist, signups are open to everyone.
 
 ### Docker Commands
 
