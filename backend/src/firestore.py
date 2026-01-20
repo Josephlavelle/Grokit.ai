@@ -66,7 +66,13 @@ class User(UserMixin):
             return False
         if self.verification_token != token:
             return False
-        if datetime.now() > self.verification_token_expires:
+        # Handle timezone-aware datetimes from Firestore
+        now = datetime.now()
+        expires = self.verification_token_expires
+        # Strip timezone info if present for comparison
+        if hasattr(expires, 'tzinfo') and expires.tzinfo is not None:
+            expires = expires.replace(tzinfo=None)
+        if now > expires:
             return False
         return True
 
@@ -333,3 +339,21 @@ def get_signup_whitelist():
     except Exception:
         # If we can't reach Firestore, fail open (allow signups)
         return None
+
+
+def is_email_verification_required():
+    """Check if email verification is required for signup.
+
+    Returns:
+        bool: True if email verification is required, False otherwise.
+    """
+    try:
+        db = get_db()
+        doc = db.collection("config").document("settings").get()
+        if not doc.exists:
+            return False  # Default to not required if no config
+        data = doc.to_dict()
+        return data.get("email_verification_required", False)
+    except Exception:
+        # If we can't reach Firestore, fail open (don't require verification)
+        return False

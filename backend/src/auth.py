@@ -1,7 +1,7 @@
 import os
 from flask import Blueprint, request, jsonify, redirect
 from flask_login import login_user, logout_user, current_user
-from firestore import User, get_signup_whitelist
+from firestore import User, get_signup_whitelist, is_email_verification_required
 import email_service
 
 auth = Blueprint("auth", __name__, url_prefix="/auth")
@@ -27,20 +27,34 @@ def signup():
 
     user = User(email=email)
     user.set_password(password)
-    token = user.generate_verification_token()
-    user.save()
 
-    # Send verification email
-    if email_service.send_verification_email(email, token):
-        return jsonify({
-            "message": "Account created. Please check your email to verify your account.",
-            "email": email
-        })
+    print(f"[DEBUG] Email verification required: {is_email_verification_required()}")
+
+    if is_email_verification_required():
+        token = user.generate_verification_token()
+        user.save()
+        print(f"[DEBUG] User saved, sending verification email to {email}")
+
+        # Send verification email
+        result = email_service.send_verification_email(email, token)
+        print(f"[DEBUG] Email send result: {result}")
+
+        if result:
+            return jsonify({
+                "message": "Account created. Please check your email to verify your account.",
+                "email": email
+            })
+        else:
+            return jsonify({
+                "message": "Account created but failed to send verification email. Please try resending.",
+                "email": email
+            })
     else:
-        return jsonify({
-            "message": "Account created but failed to send verification email. Please try resending.",
-            "email": email
-        })
+        # Skip email verification - auto-verify and log in
+        user.email_verified = True
+        user.save()
+        login_user(user)
+        return jsonify({"user": {"id": user.id, "email": user.email}})
 
 @auth.route("/login", methods=["POST"])
 def login():
@@ -50,8 +64,8 @@ def login():
 
     user = User.get_by_email(email)
     if user and user.check_password(password):
-        if not user.email_verified:
-            return jsonify({"error": "Please verify your email before logging in"}), 403
+        if is_email_verification_required() and not user.email_verified:
+            return jsonify({"error": "Please verify your email before logging in."}), 403
         login_user(user)
         return jsonify({"user": {"id": user.id, "email": user.email}})
 

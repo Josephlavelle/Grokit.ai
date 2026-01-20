@@ -64,7 +64,11 @@ export function AuthProvider({ children }) {
       throw new Error(data.error || 'Signup failed');
     }
 
-    setUser(data.user);
+    // If user is returned, set it (auto-login when verification not required)
+    // If message is returned, verification email was sent
+    if (data.user) {
+      setUser(data.user);
+    }
     return data;
   };
 

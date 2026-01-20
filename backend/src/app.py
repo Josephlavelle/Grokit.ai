@@ -40,7 +40,7 @@ limiter = Limiter(
 
 @app.errorhandler(429)
 def rate_limit_exceeded(e):
-    return jsonify({"error": "Rate limit exceeded. You can generate up to 10 quizzes per hour."}), 429
+    return jsonify({"error": "Rate limit exceeded. You can make 10 LLM requests per hour."}), 429
 
 # Import and register auth blueprint
 from auth import auth
