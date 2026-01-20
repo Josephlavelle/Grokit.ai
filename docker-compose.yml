@@ -8,5 +8,4 @@ services:
       - ./.env
     volumes:
       - ~/.aws:/root/.aws
-      - ./firebase-key.json:/app/firebase-key.json:ro
     restart: unless-stopped
