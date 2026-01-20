@@ -28,16 +28,13 @@ def signup():
     user = User(email=email)
     user.set_password(password)
 
-    print(f"[DEBUG] Email verification required: {is_email_verification_required()}")
 
     if is_email_verification_required():
         token = user.generate_verification_token()
         user.save()
-        print(f"[DEBUG] User saved, sending verification email to {email}")
 
         # Send verification email
         result = email_service.send_verification_email(email, token)
-        print(f"[DEBUG] Email send result: {result}")
 
         if result:
             return jsonify({

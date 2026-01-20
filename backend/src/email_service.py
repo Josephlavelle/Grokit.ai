@@ -107,7 +107,6 @@ def send_verification_email(to_email: str, token: str) -> bool:
     """
 
     ses = get_ses_client()
-    print(f"[DEBUG] Attempting to send email from {FROM_EMAIL} to {to_email}")
     try:
         response = ses.send_email(
             Source=FROM_EMAIL,
@@ -120,14 +119,11 @@ def send_verification_email(to_email: str, token: str) -> bool:
                 }
             }
         )
-        print(f"[DEBUG] Email sent successfully, MessageId: {response['MessageId']}")
         logger.info(f"Verification email sent to {to_email}, MessageId: {response['MessageId']}")
         return True
     except ClientError as e:
-        print(f"[DEBUG] ClientError: {e.response['Error']['Message']}")
         logger.error(f"Failed to send verification email: {e.response['Error']['Message']}")
         return False
     except Exception as e:
-        print(f"[DEBUG] Exception: {e}")
         logger.error(f"Failed to send verification email: {e}")
         return False
