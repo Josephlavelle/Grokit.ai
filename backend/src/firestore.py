@@ -25,6 +25,17 @@ def _setup_credentials():
 # Set up credentials on module load
 _setup_credentials()
 
+# Environment: "dev" or "prod" - defaults to "dev" for safety
+DEPLOYED_ENV = os.getenv("DEPLOYED_ENV", "dev")
+
+
+def get_config_collection():
+    """Get the config collection name based on environment."""
+    if DEPLOYED_ENV == "prod":
+        return "config"
+    return "config_dev"
+
+
 def get_db():
     """Get or create Firestore client singleton."""
     global _db
@@ -328,7 +339,7 @@ def get_signup_whitelist():
     """
     try:
         db = get_db()
-        doc = db.collection("config").document("signup_whitelist").get()
+        doc = db.collection(get_config_collection()).document("signup_whitelist").get()
         if not doc.exists:
             return None  # No whitelist = open signups
         data = doc.to_dict()
@@ -349,7 +360,7 @@ def is_email_verification_required():
     """
     try:
         db = get_db()
-        doc = db.collection("config").document("settings").get()
+        doc = db.collection(get_config_collection()).document("settings").get()
         if not doc.exists:
             return False  # Default to not required if no config
         data = doc.to_dict()

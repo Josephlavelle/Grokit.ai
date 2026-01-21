@@ -17,6 +17,7 @@ export const EventTypes = {
   QUIZ_CREATE: 'quiz_create',
   QUIZ_TAKE: 'quiz_take',
   FEEDBACK_REQUEST: 'feedback_request',
+  SHARE_LINK_CLICKED: 'share_link_clicked',
 };
 
 // Track an analytics event

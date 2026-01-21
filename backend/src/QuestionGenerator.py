@@ -283,8 +283,8 @@ class QuestionGenerator():
                     "number": 1
                     "question": "<Question From Quiz>",
                     "feedback": "<Explanation for user answer being wrong, and correct answer being right>"
-                }
-            ],
+                },
+            ]
             """
         chat_completion = self.client.chat.completions.create(
             messages=[

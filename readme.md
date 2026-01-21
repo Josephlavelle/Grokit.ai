@@ -103,15 +103,9 @@ docker-compose down
 2. LLM generated feedback can sometimes not align with the quiz - needs full question context
 
 ## TODO
-1. ~~Dockerize~~ ✓
-2. ~~Deploy on AWS~~
-    a. ~~read/write to S3~~
-    b. ~~wap DB to use RDS~~
-    c. ~~Upload docker container to ECR~~
-    d. ~~Deploy on ECS~~
-3. ~~Add Analytics Tracking~~
-4. Allow combining quizzes into larger exams (low priority)
-5. Email Verication (code done, waiting on AWS approval)
-6. Add share feature
-7. Add about page with How to use + example
+1. ~~Set seperate config control table between dev and prod~~
+2. Allow combining quizzes into larger exams (Review if needed)
+3. Email Verication (code done, waiting on AWS approval)
+4. ~~Add share feature~~
+5. ~~Add about page with How to use + example~~
  
