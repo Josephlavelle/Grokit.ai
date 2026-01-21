@@ -2,6 +2,7 @@ import os
 from flask import Blueprint, request, jsonify, redirect
 from flask_login import login_user, logout_user, current_user
 from firestore import User, get_signup_whitelist, is_email_verification_required
+from analytics import AnalyticsTracker, EventTypes
 import email_service
 
 auth = Blueprint("auth", __name__, url_prefix="/auth")
@@ -33,6 +34,9 @@ def signup():
         token = user.generate_verification_token()
         user.save()
 
+        # Track signup
+        AnalyticsTracker.track(EventTypes.SIGNUP, user=user)
+
         # Send verification email
         result = email_service.send_verification_email(email, token)
 
@@ -50,6 +54,10 @@ def signup():
         # Skip email verification - auto-verify and log in
         user.email_verified = True
         user.save()
+
+        # Track signup
+        AnalyticsTracker.track(EventTypes.SIGNUP, user=user)
+
         login_user(user)
         return jsonify({"user": {"id": user.id, "email": user.email}})
 
@@ -64,6 +72,10 @@ def login():
         if is_email_verification_required() and not user.email_verified:
             return jsonify({"error": "Please verify your email before logging in."}), 403
         login_user(user)
+
+        # Track login
+        AnalyticsTracker.track(EventTypes.LOGIN, user=user)
+
         return jsonify({"user": {"id": user.id, "email": user.email}})
 
     return jsonify({"error": "Invalid credentials"}), 401

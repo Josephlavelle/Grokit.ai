@@ -8,6 +8,7 @@ import dotenv
 import json
 from QuestionGenerator import QuestionGenerator
 from firestore import User, Quiz
+from analytics import AnalyticsTracker, EventTypes
 import s3
 
 dotenv.load_dotenv()
@@ -88,6 +89,36 @@ def me():
         return jsonify({"user": {"id": current_user.id, "email": current_user.email}})
     return jsonify({"user": None})
 
+@api.route("/analytics/track", methods=["POST"])
+def track_analytics():
+    """Track analytics events initiated from the frontend."""
+    data = request.get_json()
+
+    event_type = data.get("event_type")
+    metadata = data.get("metadata", {})
+
+    # Validate event type - only allow frontend-trackable events
+    valid_events = [EventTypes.QUIZ_TAKE]
+
+    if event_type not in valid_events:
+        return jsonify({"error": "Invalid event type"}), 400
+
+    user = current_user if current_user.is_authenticated else None
+    AnalyticsTracker.track(event_type, user=user, metadata=metadata)
+
+    # Return session_id for client to store
+    session_id = AnalyticsTracker.get_session_id()
+
+    response = jsonify({"success": True})
+    response.set_cookie(
+        'analytics_session_id',
+        session_id,
+        max_age=365*24*60*60,  # 1 year
+        httponly=True,
+        samesite='Lax'
+    )
+    return response
+
 @api.route("/upload", methods=["POST"])
 @limiter.limit("10 per hour")
 @login_required
@@ -120,6 +151,13 @@ def upload():
         return jsonify({"error": f"Failed to generate quiz: {str(e)}"}), 500
 
     session["questions_json"] = mcq_data
+
+    # Track quiz creation
+    AnalyticsTracker.track(
+        EventTypes.QUIZ_CREATE,
+        user=current_user,
+        metadata={"question_count": len(mcq_data)}
+    )
 
     return jsonify({
         "questions": mcq_data,
@@ -212,12 +250,17 @@ def get_feedback():
     total = data.get("total", 0)
     client = QuestionGenerator(user=current_user)
     feedback = client.request_feedback(input_text=str(wrong_answers))
-    print(feedback)
-    feedback_json = jsonify({
+
+    # Track feedback request
+    AnalyticsTracker.track(
+        EventTypes.FEEDBACK_REQUEST,
+        user=current_user,
+        metadata={"score": score, "total": total, "wrong_count": len(wrong_answers)}
+    )
+
+    return jsonify({
         "feedback": json.loads(feedback)
     })
-    print(feedback_json)
-    return feedback_json
 
 app.register_blueprint(api)
 

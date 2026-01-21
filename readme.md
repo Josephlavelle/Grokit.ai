@@ -73,10 +73,6 @@ docker-compose logs -f
 
 # Stop the app
 docker-compose down
-
-# Reset database (removes all data)
-docker-compose down -v
-docker-compose up --build
 ```
 
 ## Usage
@@ -108,11 +104,14 @@ docker-compose up --build
 
 ## TODO
 1. ~~Dockerize~~ ✓
-2. Deploy on AWS
+2. ~~Deploy on AWS~~
     a. ~~read/write to S3~~
-    b. Swap DB to use RDS
-    c. Upload docker container to ECR
-    d. Deploy on ECS
-3. Get new domain
+    b. ~~wap DB to use RDS~~
+    c. ~~Upload docker container to ECR~~
+    d. ~~Deploy on ECS~~
+3. ~~Add Analytics Tracking~~
 4. Allow combining quizzes into larger exams (low priority)
+5. Email Verication (code done, waiting on AWS approval)
+6. Add share feature
+7. Add about page with How to use + example
  
