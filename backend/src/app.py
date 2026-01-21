@@ -117,7 +117,7 @@ def track_analytics():
     metadata = data.get("metadata", {})
 
     # Validate event type - only allow frontend-trackable events
-    valid_events = [EventTypes.QUIZ_TAKE]
+    valid_events = [EventTypes.QUIZ_TAKE, EventTypes.SHARE_LINK_CLICKED]
 
     if event_type not in valid_events:
         return jsonify({"error": "Invalid event type"}), 400

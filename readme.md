@@ -103,9 +103,9 @@ docker-compose down
 2. LLM generated feedback can sometimes not align with the quiz - needs full question context
 
 ## TODO
-1. Set seperate config control table between dev and prod
-2. Allow combining quizzes into larger exams (low priority)
+1. ~~Set seperate config control table between dev and prod~~
+2. Allow combining quizzes into larger exams (Review if needed)
 3. Email Verication (code done, waiting on AWS approval)
-4. Add share feature
+4. ~~Add share feature~~
 5. ~~Add about page with How to use + example~~
  

@@ -566,6 +566,33 @@ a:hover {
   padding: 60px 20px;
 }
 
+/* Share Button */
+.share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 0-px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.share-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--accent-primary);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.share-btn svg {
+  flex-shrink: 0;
+}
+
 /* ===== About Section ===== */
 .about-section {
   padding: 80px 20px;
