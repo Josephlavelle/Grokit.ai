@@ -16,6 +16,7 @@ dotenv.load_dotenv()
 # Demo content S3 paths - easily configurable
 DEMO_INPUT_PATH = os.getenv("DEMO_INPUT_PATH", "demo/sample_input.txt")
 DEMO_QUIZ_PATH = os.getenv("DEMO_QUIZ_PATH", "demo/sample_output.json")
+DEMO_FEEDBACK_PATH = os.getenv("DEMO_FEEDBACK_PATH", "demo/sample_feedback.json")
 
 def get_user_id():
     """Get current user ID for rate limiting, fall back to IP."""
@@ -101,9 +102,18 @@ def get_demo():
         quiz_json = s3.get_file(DEMO_QUIZ_PATH)
         quiz_data = json.loads(quiz_json)
 
+        # Feedback is optional
+        feedback_data = None
+        try:
+            feedback_json = s3.get_file(DEMO_FEEDBACK_PATH)
+            feedback_data = json.loads(feedback_json)
+        except Exception:
+            pass
+
         return jsonify({
             "input_text": input_text,
-            "quiz": quiz_data
+            "quiz": quiz_data,
+            "feedback": feedback_data
         })
     except Exception as e:
         return jsonify({"error": f"Failed to load demo: {str(e)}"}), 500

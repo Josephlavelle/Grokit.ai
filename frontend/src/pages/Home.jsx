@@ -177,6 +177,39 @@ export default function Home() {
                 )}
               </div>
             </div>
+
+            <div className="demo-arrow">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </div>
+
+            <div className="demo-panel">
+              <h3>AI Feedback</h3>
+              <div className="demo-content demo-feedback">
+                {loadingDemo ? (
+                  <div className="demo-loading">
+                    <span className="spinner"></span>
+                  </div>
+                ) : demo?.feedback?.length > 0 ? (
+                  <div className="demo-feedback-items">
+                    {demo.feedback.slice(0, 2).map((item, i) => (
+                      <div key={i} className="demo-feedback-item">
+                        <p className="demo-feedback-q">
+                          <span className="demo-q-num">{item.number}:</span> {item.question}
+                        </p>
+                        <p className="demo-feedback-text">{item.feedback}</p>
+                      </div>
+                    ))}
+                    {demo.feedback.length > 2 && (
+                      <p className="demo-more">+ {demo.feedback.length - 2} more...</p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="demo-placeholder">Personalized AI feedback explaining why answers were incorrect and how to improve...</p>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="about-features">
