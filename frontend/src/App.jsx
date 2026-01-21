@@ -10,11 +10,9 @@ import Results from './pages/Results';
 import Library from './pages/Library';
 import './App.css';
 
-function App() {
+function AppContent() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
+    <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
@@ -50,7 +48,15 @@ function App() {
               </ProtectedRoute>
             }
           />
-        </Routes>
+    </Routes>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <AppContent />
       </BrowserRouter>
     </AuthProvider>
   );

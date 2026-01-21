@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { trackEvent, EventTypes } from '../hooks/useAnalytics';
 
 const API_BASE = '';
 
@@ -70,6 +71,12 @@ export default function Questions() {
       if (!response.ok) {
         throw new Error(data.error || 'Failed to submit answers');
       }
+
+      // Track quiz completion
+      trackEvent(EventTypes.QUIZ_TAKE, {
+        score: data.score,
+        total: data.total,
+      });
 
       navigate('/results', {
         state: {
