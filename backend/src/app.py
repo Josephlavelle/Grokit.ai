@@ -1,6 +1,8 @@
 from flask import Flask, request, session, jsonify, Blueprint, send_from_directory
 from flask_cors import CORS
 from flask_login import LoginManager, login_required, current_user
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import os
 import dotenv
 import json
@@ -9,6 +11,12 @@ from firestore import User, Quiz
 import s3
 
 dotenv.load_dotenv()
+
+def get_user_id():
+    """Get current user ID for rate limiting, fall back to IP."""
+    if current_user and current_user.is_authenticated:
+        return str(current_user.id)
+    return get_remote_address()
 
 # Configure static folder for production (React build output)
 static_folder = os.path.join(os.path.dirname(__file__), 'static')
@@ -21,6 +29,18 @@ CORS(app, supports_credentials=True, origins=cors_origins)
 api = Blueprint("api", __name__, url_prefix="/api")
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10 MB to support larger input files
 app.secret_key = os.getenv("APP_SECRET_KEY")
+
+# Rate limiter - 10 requests per hour for quiz/feedback generation
+limiter = Limiter(
+    key_func=get_user_id,
+    app=app,
+    default_limits=[],
+    storage_uri="memory://"
+)
+
+@app.errorhandler(429)
+def rate_limit_exceeded(e):
+    return jsonify({"error": "Rate limit exceeded. You can make 10 LLM requests per hour."}), 429
 
 # Import and register auth blueprint
 from auth import auth
@@ -69,6 +89,7 @@ def me():
     return jsonify({"user": None})
 
 @api.route("/upload", methods=["POST"])
+@limiter.limit("10 per hour")
 @login_required
 def upload():
     file = request.files.get("file")
@@ -180,6 +201,7 @@ def delete_quiz(quiz_id):
     return jsonify({"message": "Quiz deleted successfully"})
 
 @api.route("/feedback", methods=["POST"])
+@limiter.limit("10 per hour")
 @login_required
 def get_feedback():
     """Generate feedback based on quiz results"""

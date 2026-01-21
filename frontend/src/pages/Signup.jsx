@@ -7,6 +7,7 @@ export default function Signup() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
   const { signup } = useAuth();
   const navigate = useNavigate();
 
@@ -16,14 +17,41 @@ export default function Signup() {
     setLoading(true);
 
     try {
-      await signup(email, password);
-      navigate('/upload');
+      const result = await signup(email, password);
+      if (result.user) {
+        // Auto-login (verification not required)
+        navigate('/upload');
+      } else if (result.message) {
+        // Verification email sent
+        setVerificationSent(true);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+
+  if (verificationSent) {
+    return (
+      <div className="centered">
+        <div className="container">
+          <h1>Check Your Email</h1>
+          <p>We've sent a verification link to <strong>{email}</strong></p>
+          <p style={{ marginTop: '16px', color: '#666' }}>
+            Click the link in the email to verify your account, then you can log in.
+          </p>
+          <p style={{ marginTop: '24px', fontSize: '14px' }}>
+            Didn't receive the email? Check your spam folder or{' '}
+            <Link to="/login">try logging in</Link> to resend.
+          </p>
+          <Link to="/login" className="btn btn-primary" style={{ marginTop: '24px' }}>
+            Go to Login
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="centered">

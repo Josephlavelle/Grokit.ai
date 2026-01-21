@@ -2,11 +2,12 @@ import os
 import json
 import base64
 import tempfile
+import secrets
 from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
-from datetime import datetime
+from datetime import datetime, timedelta
 
 _db = None
 
@@ -35,10 +36,14 @@ def get_db():
 class User(UserMixin):
     """User model compatible with Flask-Login."""
 
-    def __init__(self, id=None, email=None, password_hash=None):
+    def __init__(self, id=None, email=None, password_hash=None, email_verified=False,
+                 verification_token=None, verification_token_expires=None):
         self.id = id
         self.email = email
         self.password_hash = password_hash
+        self.email_verified = email_verified
+        self.verification_token = verification_token
+        self.verification_token_expires = verification_token_expires
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -48,6 +53,34 @@ class User(UserMixin):
 
     def get_id(self):
         return str(self.id)
+
+    def generate_verification_token(self):
+        """Generate a new verification token valid for 24 hours."""
+        self.verification_token = secrets.token_urlsafe(32)
+        self.verification_token_expires = datetime.now() + timedelta(hours=24)
+        return self.verification_token
+
+    def verify_token(self, token):
+        """Check if the provided token is valid and not expired."""
+        if not self.verification_token or not self.verification_token_expires:
+            return False
+        if self.verification_token != token:
+            return False
+        # Handle timezone-aware datetimes from Firestore
+        now = datetime.now()
+        expires = self.verification_token_expires
+        # Strip timezone info if present for comparison
+        if hasattr(expires, 'tzinfo') and expires.tzinfo is not None:
+            expires = expires.replace(tzinfo=None)
+        if now > expires:
+            return False
+        return True
+
+    def mark_verified(self):
+        """Mark the user's email as verified."""
+        self.email_verified = True
+        self.verification_token = None
+        self.verification_token_expires = None
 
     def save(self):
         """Save user to Firestore."""
@@ -61,13 +94,19 @@ class User(UserMixin):
             doc_ref.set({
                 "email": self.email,
                 "password_hash": self.password_hash,
+                "email_verified": self.email_verified,
+                "verification_token": self.verification_token,
+                "verification_token_expires": self.verification_token_expires,
                 "created_at": datetime.now()
             })
         else:
             # Update existing user
             users_ref.document(str(self.id)).update({
                 "email": self.email,
-                "password_hash": self.password_hash
+                "password_hash": self.password_hash,
+                "email_verified": self.email_verified,
+                "verification_token": self.verification_token,
+                "verification_token_expires": self.verification_token_expires
             })
         return self
 
@@ -78,7 +117,14 @@ class User(UserMixin):
         doc = db.collection("users").document(str(user_id)).get()
         if doc.exists:
             data = doc.to_dict()
-            return User(id=doc.id, email=data["email"], password_hash=data["password_hash"])
+            return User(
+                id=doc.id,
+                email=data["email"],
+                password_hash=data["password_hash"],
+                email_verified=data.get("email_verified", False),
+                verification_token=data.get("verification_token"),
+                verification_token_expires=data.get("verification_token_expires")
+            )
         return None
 
     @staticmethod
@@ -88,7 +134,31 @@ class User(UserMixin):
         docs = db.collection("users").where(filter=FieldFilter("email", "==", email)).limit(1).stream()
         for doc in docs:
             data = doc.to_dict()
-            return User(id=doc.id, email=data["email"], password_hash=data["password_hash"])
+            return User(
+                id=doc.id,
+                email=data["email"],
+                password_hash=data["password_hash"],
+                email_verified=data.get("email_verified", False),
+                verification_token=data.get("verification_token"),
+                verification_token_expires=data.get("verification_token_expires")
+            )
+        return None
+
+    @staticmethod
+    def get_by_verification_token(token):
+        """Get user by verification token."""
+        db = get_db()
+        docs = db.collection("users").where(filter=FieldFilter("verification_token", "==", token)).limit(1).stream()
+        for doc in docs:
+            data = doc.to_dict()
+            return User(
+                id=doc.id,
+                email=data["email"],
+                password_hash=data["password_hash"],
+                email_verified=data.get("email_verified", False),
+                verification_token=data.get("verification_token"),
+                verification_token_expires=data.get("verification_token_expires")
+            )
         return None
 
 
@@ -269,3 +339,21 @@ def get_signup_whitelist():
     except Exception:
         # If we can't reach Firestore, fail open (allow signups)
         return None
+
+
+def is_email_verification_required():
+    """Check if email verification is required for signup.
+
+    Returns:
+        bool: True if email verification is required, False otherwise.
+    """
+    try:
+        db = get_db()
+        doc = db.collection("config").document("settings").get()
+        if not doc.exists:
+            return False  # Default to not required if no config
+        data = doc.to_dict()
+        return data.get("email_verification_required", False)
+    except Exception:
+        # If we can't reach Firestore, fail open (don't require verification)
+        return False
