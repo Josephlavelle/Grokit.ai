@@ -13,6 +13,10 @@ import s3
 
 dotenv.load_dotenv()
 
+# Demo content S3 paths - easily configurable
+DEMO_INPUT_PATH = os.getenv("DEMO_INPUT_PATH", "demo/sample_input.txt")
+DEMO_QUIZ_PATH = os.getenv("DEMO_QUIZ_PATH", "demo/sample_output.json")
+
 def get_user_id():
     """Get current user ID for rate limiting, fall back to IP."""
     if current_user and current_user.is_authenticated:
@@ -88,6 +92,21 @@ def me():
     if current_user.is_authenticated:
         return jsonify({"user": {"id": current_user.id, "email": current_user.email}})
     return jsonify({"user": None})
+
+@api.route("/demo")
+def get_demo():
+    """Get demo content for the landing page."""
+    try:
+        input_text = s3.get_file(DEMO_INPUT_PATH)
+        quiz_json = s3.get_file(DEMO_QUIZ_PATH)
+        quiz_data = json.loads(quiz_json)
+
+        return jsonify({
+            "input_text": input_text,
+            "quiz": quiz_data
+        })
+    except Exception as e:
+        return jsonify({"error": f"Failed to load demo: {str(e)}"}), 500
 
 @api.route("/analytics/track", methods=["POST"])
 def track_analytics():

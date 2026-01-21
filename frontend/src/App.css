@@ -552,3 +552,239 @@ a:hover {
 ::-webkit-scrollbar-thumb:hover {
   background: #4a4a5a;
 }
+
+/* ===== Home Page Layout ===== */
+.home-page {
+  min-height: 100vh;
+}
+
+.hero-section {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+}
+
+/* ===== About Section ===== */
+.about-section {
+  padding: 80px 20px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+}
+
+.about-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.about-container h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.about-subtitle {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  margin-bottom: 48px;
+}
+
+/* ===== Demo Section ===== */
+.demo-section {
+  display: flex;
+  align-items: stretch;
+  gap: 24px;
+  margin-bottom: 60px;
+}
+
+.demo-panel {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.demo-panel h3 {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  padding: 16px 20px;
+  margin: 0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.demo-content {
+  flex: 1;
+  padding: 20px;
+  text-align: left;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.demo-content pre {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.demo-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.demo-placeholder {
+  color: var(--text-muted);
+  font-style: italic;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.demo-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-primary);
+  flex-shrink: 0;
+}
+
+/* Demo Quiz Styles */
+.demo-questions {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.demo-question {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.demo-question:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.demo-q-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+}
+
+.demo-q-num {
+  color: var(--accent-primary);
+  margin-right: 6px;
+}
+
+.demo-options {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.demo-options li {
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+}
+
+.demo-options li.correct {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #6ee7b7;
+}
+
+.demo-more {
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+  margin: 8px 0 0 0;
+}
+
+/* ===== Features ===== */
+.about-features {
+  display: flex;
+  gap: 32px;
+  justify-content: center;
+}
+
+.feature {
+  flex: 1;
+  max-width: 240px;
+  text-align: center;
+}
+
+.feature-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 16px;
+  background: var(--accent-gradient);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+}
+
+.feature h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.feature p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ===== Responsive - About Section ===== */
+@media (max-width: 768px) {
+  .demo-section {
+    flex-direction: column;
+  }
+
+  .demo-arrow {
+    transform: rotate(90deg);
+    padding: 8px 0;
+  }
+
+  .demo-content {
+    max-height: 300px;
+  }
+
+  .about-features {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .feature {
+    max-width: 100%;
+  }
+}
