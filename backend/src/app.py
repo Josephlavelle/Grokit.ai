@@ -4,14 +4,60 @@ from flask_login import LoginManager, login_required, current_user
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import os
+import io
 import dotenv
 import json
+import PyPDF2
+from docx import Document
 from QuestionGenerator import QuestionGenerator
 from firestore import User, Quiz
 from analytics import AnalyticsTracker, EventTypes
 import s3
 
+# Supported file extensions for document upload
+ALLOWED_EXTENSIONS = {'.txt', '.pdf', '.docx', '.doc'}
+
+
+def extract_text_from_file(file):
+    """Extract text content from uploaded file based on its type."""
+    filename = file.filename.lower()
+    file_bytes = file.read()
+
+    if filename.endswith('.txt'):
+        # Plain text file
+        try:
+            return file_bytes.decode('utf-8')
+        except UnicodeDecodeError:
+            return file_bytes.decode('latin-1')
+
+    elif filename.endswith('.pdf'):
+        # PDF file
+        pdf_file = io.BytesIO(file_bytes)
+        pdf_reader = PyPDF2.PdfReader(pdf_file)
+        text_parts = []
+        for page in pdf_reader.pages:
+            text = page.extract_text()
+            if text:
+                text_parts.append(text)
+        return '\n'.join(text_parts)
+
+    elif filename.endswith('.docx') or filename.endswith('.doc'):
+        # Word document
+        docx_file = io.BytesIO(file_bytes)
+        doc = Document(docx_file)
+        text_parts = []
+        for paragraph in doc.paragraphs:
+            if paragraph.text.strip():
+                text_parts.append(paragraph.text)
+        return '\n'.join(text_parts)
+
+    else:
+        raise ValueError(f"Unsupported file type: {filename}")
+
 dotenv.load_dotenv()
+
+# Word limit for best quiz generation results (configurable via .env)
+MAX_WORD_COUNT = int(os.getenv("MAX_WORD_COUNT", "4500"))
 
 # Demo content S3 paths - easily configurable
 DEMO_INPUT_PATH = os.getenv("DEMO_INPUT_PATH", "demo/sample_input.txt")
@@ -33,7 +79,7 @@ cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
 CORS(app, supports_credentials=True, origins=cors_origins)
 
 api = Blueprint("api", __name__, url_prefix="/api")
-app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10 MB to support larger input files
+app.config["MAX_CONTENT_LENGTH"] = 1 * 1024 * 1024  # 1 MB max file size
 app.secret_key = os.getenv("APP_SECRET_KEY")
 
 # Rate limiter - 10 requests per hour for quiz/feedback generation
@@ -157,17 +203,24 @@ def upload():
 
     if not file or file.filename == "":
         return jsonify({"error": "No file selected"}), 400
-    if not file.filename.endswith(".txt"):
-        return jsonify({"error": "Only .txt files are allowed"}), 400
 
-    # Read and decode file content
+    # Check file extension
+    file_ext = os.path.splitext(file.filename.lower())[1]
+    if file_ext not in ALLOWED_EXTENSIONS:
+        return jsonify({"error": f"Unsupported file type. Allowed: TXT, PDF, DOCX"}), 400
+
+    # Extract text content from file
     try:
-        file_bytes = file.read()
-        # Try UTF-8 first, fall back to latin-1 which accepts any byte sequence
-        try:
-            text = file_bytes.decode("utf-8")
-        except UnicodeDecodeError:
-            text = file_bytes.decode("latin-1")
+        text = extract_text_from_file(file)
+        if not text or not text.strip():
+            return jsonify({"error": "Could not extract text from file. The file may be empty or contain only images."}), 400
+
+        # Check word count limit
+        word_count = len(text.split())
+        if word_count > MAX_WORD_COUNT:
+            return jsonify({
+                "error": f"Document exceeds {MAX_WORD_COUNT:,} word limit ({word_count:,} words). Please use a shorter document for best results."
+            }), 400
     except Exception as e:
         return jsonify({"error": f"Failed to read file: {str(e)}"}), 400
 
