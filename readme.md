@@ -3,7 +3,7 @@ An AI-powered quiz generation application that creates multiple-choice questions
 
 ## Features
 
-- **Quiz Generation**: Upload text files and automatically generate multiple-choice questions
+- **Quiz Generation**: Upload documents (TXT, PDF, DOCX) and automatically generate multiple-choice questions
 - **Quiz Library**: Save and retake previously generated quizzes
 - **Results Review**: See detailed breakdown of incorrect answers after completing a quiz
 - **AI Feedback**: Get personalized feedback on quiz performance
@@ -52,6 +52,7 @@ docker-compose up --build
 | `GOOGLE_APPLICATION_CREDENTIALS_JSON` | Yes | Base64-encoded Firebase service account JSON |
 | `S3_BUCKET` | Yes | S3 bucket name for file storage |
 | `CORS_ORIGINS` | No | Allowed CORS origins (default: localhost) |
+| `MAX_WORD_COUNT` | No | Maximum words per document (default: 4500) |
 
 ### Signup Whitelist
 
@@ -78,7 +79,7 @@ docker-compose down
 ## Usage
 
 1. Create an account or log in
-2. Upload a `.txt` file with content you want to quiz on
+2. Upload a document (TXT, PDF, or DOCX) with content you want to quiz on (4,500 word limit)
 3. Answer the generated multiple-choice questions
 4. Review your results and get AI-powered feedback
 5. Access your quiz library to retake previous quizzes
@@ -108,4 +109,6 @@ docker-compose down
 3. Email Verication (code done, waiting on AWS approval)
 4. ~~Add share feature~~
 5. ~~Add about page with How to use + example~~
+6. Share button looks bad
+7. Fix UI scaling on different sized displays (laptop looks great but 24" looks bad)
  

@@ -11,6 +11,7 @@ export default function Upload() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [dragActive, setDragActive] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
@@ -19,6 +20,7 @@ export default function Upload() {
 
     setFileName(file.name);
 
+    // Only show preview for plain text files
     if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
       const reader = new FileReader();
       reader.onload = () => {
@@ -26,6 +28,10 @@ export default function Upload() {
         setShowPreview(true);
       };
       reader.readAsText(file);
+    } else {
+      // For PDF/DOCX, no client-side preview
+      setShowPreview(false);
+      setPreview('');
     }
   };
 
@@ -103,7 +109,7 @@ export default function Upload() {
           <input
             type="file"
             ref={fileInputRef}
-            accept=".txt"
+            accept=".txt,.pdf,.docx,.doc"
             onChange={handleFileChange}
             required
             hidden
@@ -142,9 +148,64 @@ export default function Upload() {
                 <span style={{ fontSize: '32px', marginBottom: '12px', display: 'block' }}>
                   📁
                 </span>
-                <span style={{ fontWeight: '500' }}>Drop your .txt file here</span>
+                <span style={{ fontWeight: '500' }}>Drop your document here</span>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '8px 0 0' }}>
                   or click to browse
+                </p>
+                <p
+                  style={{
+                    fontSize: '12px',
+                    color: 'var(--text-muted)',
+                    margin: '4px 0 0',
+                    position: 'relative',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  Supports: TXT, PDF, DOCX
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '16px',
+                      height: '16px',
+                      borderRadius: '50%',
+                      background: 'var(--border-color)',
+                      color: 'var(--text-secondary)',
+                      fontSize: '11px',
+                      fontWeight: '600',
+                      cursor: 'help',
+                      position: 'relative'
+                    }}
+                    onMouseEnter={(e) => { e.stopPropagation(); setShowTooltip(true); }}
+                    onMouseLeave={(e) => { e.stopPropagation(); setShowTooltip(false); }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    ?
+                    {showTooltip && (
+                      <span
+                        style={{
+                          position: 'absolute',
+                          bottom: '24px',
+                          left: '50%',
+                          transform: 'translateX(-50%)',
+                          background: 'var(--bg-primary)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: 'var(--radius-sm)',
+                          padding: '8px 12px',
+                          fontSize: '12px',
+                          color: 'var(--text-primary)',
+                          whiteSpace: 'nowrap',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                          zIndex: 10
+                        }}
+                      >
+                        Due to technical limitations, the document is currently limited to a 4,500 word limit
+                      </span>
+                    )}
+                  </span>
                 </p>
               </div>
             )}
