@@ -97,7 +97,7 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            <p style={{ marginTop: '24px', fontSize: '14px', marginBottom: '10px' }}>
+            <p style={{ marginTop: '24px', fontSize: '14px', marginBottom: '24px' }}>
               New here? <Link to="/signup">Create an account</Link>
             </p>
           )}

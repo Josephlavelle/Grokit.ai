@@ -1,5 +1,8 @@
 .env
 firebase-key.json
+node_modules/
+package.json
+package-lock.json
 inputs/
 backend/src/instance/
 backend/src/model_responses/
