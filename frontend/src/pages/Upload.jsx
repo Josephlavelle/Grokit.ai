@@ -12,6 +12,8 @@ export default function Upload() {
   const [error, setError] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [numQuestions, setNumQuestions] = useState(10);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
@@ -59,14 +61,20 @@ export default function Upload() {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
+    setShowModal(true);
+  };
+
+  const handleGenerateQuiz = async () => {
+    setShowModal(false);
     setLoading(true);
 
     const formData = new FormData();
     formData.append('file', fileInputRef.current.files[0]);
     formData.append('quiz_name', quizName);
+    formData.append('num_questions', numQuestions);
 
     try {
       const response = await fetch(`${API_BASE}/api/upload`, {
@@ -239,6 +247,47 @@ export default function Upload() {
           Back to Home
         </Link>
       </div>
+
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Customize Your Quiz</h2>
+            <p>How many questions would you like?</p>
+
+            <div className="question-slider">
+              <input
+                type="range"
+                min="1"
+                max="10"
+                value={numQuestions}
+                onChange={(e) => setNumQuestions(parseInt(e.target.value))}
+                className="slider"
+              />
+              <div className="question-count">{numQuestions}</div>
+            </div>
+
+            <div className="slider-labels">
+              <span>1</span>
+              <span>10</span>
+            </div>
+
+            <div className="modal-buttons">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleGenerateQuiz}
+              >
+                Generate Quiz
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

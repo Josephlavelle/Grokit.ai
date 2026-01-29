@@ -200,6 +200,10 @@ def track_analytics():
 def upload():
     file = request.files.get("file")
     name = request.form.get("quiz_name")
+    num_questions = request.form.get("num_questions", 10, type=int)
+
+    # Validate num_questions is within allowed range (1-10)
+    num_questions = max(1, min(10, num_questions))
 
     if not file or file.filename == "":
         return jsonify({"error": "No file selected"}), 400
@@ -226,7 +230,7 @@ def upload():
 
     try:
         client = QuestionGenerator(user=current_user)
-        mcq_data = client.request_quiz(input_text=text, quiz_name=name)
+        mcq_data = client.request_quiz(input_text=text, quiz_name=name, num_questions=num_questions)
     except RuntimeError as e:
         return jsonify({"error": str(e)}), 500
     except Exception as e:
