@@ -28,6 +28,12 @@ export default function Questions() {
       const response = await fetch(`${API_BASE}/questions`, {
         credentials: 'include',
       });
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('server_error');
+      }
+
       const data = await response.json();
 
       if (!response.ok) {
@@ -36,7 +42,11 @@ export default function Questions() {
 
       setQuestions(data.questions);
     } catch (err) {
-      setError(err.message);
+      if (err.message === 'server_error' || err.name === 'TypeError') {
+        setError('Something went wrong. Please try again later.');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -66,6 +76,11 @@ export default function Questions() {
         body: formData,
       });
 
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('server_error');
+      }
+
       const data = await response.json();
 
       if (!response.ok) {
@@ -86,7 +101,11 @@ export default function Questions() {
         },
       });
     } catch (err) {
-      setError(err.message);
+      if (err.message === 'server_error' || err.name === 'TypeError') {
+        setError('Something went wrong. Please try again later.');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setSubmitting(false);
     }

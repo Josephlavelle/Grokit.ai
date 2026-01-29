@@ -45,11 +45,16 @@ export default function Results() {
         }),
       });
 
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('server_error');
+      }
+
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || 'Failed to get feedback');
       }
-      
+
       const feedback_json = data.feedback
       var feedback_string = feedback_json.map(item => {
         return `
@@ -57,10 +62,14 @@ export default function Results() {
         Feedback: ${item.feedback}
         `;
       }).join('\n');
-      
+
       setFeedback(feedback_string);
     } catch (err) {
-      setFeedbackError(err.message);
+      if (err.message === 'server_error' || err.name === 'TypeError') {
+        setFeedbackError('Something went wrong. Please try again later.');
+      } else {
+        setFeedbackError(err.message);
+      }
     } finally {
       setLoadingFeedback(false);
     }
