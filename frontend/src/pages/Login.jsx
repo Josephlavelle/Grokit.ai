@@ -47,6 +47,12 @@ export default function Login() {
         credentials: 'include',
         body: JSON.stringify({ email }),
       });
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('server_error');
+      }
+
       const data = await response.json();
 
       if (!response.ok) {
@@ -55,7 +61,11 @@ export default function Login() {
       setResendSuccess('Verification email sent! Check your inbox.');
       setNeedsVerification(false);
     } catch (err) {
-      setError(err.message);
+      if (err.message === 'server_error' || err.name === 'TypeError') {
+        setError('Something went wrong. Please try again later.');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setResending(false);
     }

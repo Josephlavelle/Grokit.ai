@@ -83,7 +83,18 @@ export default function Upload() {
         body: formData,
       });
 
-      const data = await response.json();
+      // Try to parse JSON, handle HTML error responses gracefully
+      let data;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        // Got HTML or other non-JSON response
+        if (!response.ok) {
+          throw new Error('server_error');
+        }
+        throw new Error('Unexpected response format');
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Upload failed');
@@ -91,7 +102,12 @@ export default function Upload() {
 
       navigate('/questions', { state: { questions: data.questions } });
     } catch (err) {
-      setError(err.message);
+      // Show generic message for server errors or network issues
+      if (err.message === 'server_error' || err.name === 'TypeError') {
+        setError('Something went wrong. Please try again later.');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }
