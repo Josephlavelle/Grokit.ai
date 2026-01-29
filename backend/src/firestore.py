@@ -243,13 +243,14 @@ class Quiz:
     """Quiz model for storing generated quizzes."""
 
     def __init__(self, id=None, upload_id=None, content=None, created_at=None,
-                 status="created", user_id=None, upload=None):
+                 status="created", user_id=None, upload=None, num_questions=None):
         self.id = id
         self.upload_id = upload_id
         self.content = content
         self.created_at = created_at or datetime.now()
         self.status = status
         self.user_id = user_id
+        self.num_questions = num_questions  # Number of questions requested by user
         self._upload = upload  # Cached upload object
 
     @property
@@ -272,13 +273,15 @@ class Quiz:
                 "content": self.content,
                 "created_at": self.created_at,
                 "status": self.status,
-                "user_id": self.user_id
+                "user_id": self.user_id,
+                "num_questions": self.num_questions
             })
         else:
             quizzes_ref.document(str(self.id)).update({
                 "upload_id": self.upload_id,
                 "content": self.content,
-                "status": self.status
+                "status": self.status,
+                "num_questions": self.num_questions
             })
         return self
 
@@ -295,7 +298,8 @@ class Quiz:
                 content=data["content"],
                 created_at=data.get("created_at"),
                 status=data.get("status", "created"),
-                user_id=data["user_id"]
+                user_id=data["user_id"],
+                num_questions=data.get("num_questions")
             )
         return None
 
@@ -317,7 +321,8 @@ class Quiz:
                 content=data["content"],
                 created_at=data.get("created_at"),
                 status=data.get("status", "created"),
-                user_id=data["user_id"]
+                user_id=data["user_id"],
+                num_questions=data.get("num_questions")
             ))
         return quizzes
 

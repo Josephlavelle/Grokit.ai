@@ -83,7 +83,7 @@ class QuestionGenerator():
         logger.info(f"Split text into {len(chunks)} chunks")
         return chunks
 
-    def request_quiz(self, input_text, quiz_name, model="llama-3.3-70b-versatile", temperature=0, instructions_override="", file_path="model_responses/"):
+    def request_quiz(self, input_text, quiz_name, model="llama-3.3-70b-versatile", temperature=0, instructions_override="", file_path="model_responses/", num_questions=None):
         """Generate a quiz from input text, with automatic chunking for large inputs.
 
         For texts larger than MAX_CHUNK_CHARS, the text is split into chunks and
@@ -96,39 +96,68 @@ class QuestionGenerator():
             temperature: Generation temperature
             instructions_override: Custom instructions (overrides default)
             file_path: Base path for saving files
+            num_questions: Number of questions to generate (1-20, defaults to TARGET_TOTAL_QUESTIONS)
 
         Returns:
             List of question dictionaries
         """
+        # Use provided num_questions or fall back to default
+        target_questions = num_questions if num_questions is not None else self.TARGET_TOTAL_QUESTIONS
+
         # Handle custom instructions override (maintains backward compatibility)
         if instructions_override:
             # Use old single-request behavior with custom instructions
-            return self._request_quiz_single(input_text, quiz_name, model, temperature, instructions_override, file_path)
+            return self._request_quiz_single(input_text, quiz_name, model, temperature, instructions_override, file_path, target_questions)
 
         # Chunk the input text
         chunks = self.chunk_text(input_text)
         num_chunks = len(chunks)
 
-        logger.info(f"Processing {num_chunks} chunk(s) for quiz '{quiz_name}'")
+        logger.info(f"Processing {num_chunks} chunk(s) for quiz '{quiz_name}' with {target_questions} target questions")
+
+        # Limit questions per API request to avoid token limits
+        MAX_QUESTIONS_PER_REQUEST = 5
+
+        # If requesting fewer questions than chunks, only use the first chunk
+        # This avoids generating more questions than requested
+        if target_questions < num_chunks:
+            chunks = chunks[:1]  # Use only first chunk
+            num_chunks = 1
 
         # Calculate questions per chunk
         # Distribute questions evenly, with any remainder going to earlier chunks
-        base_questions = self.TARGET_TOTAL_QUESTIONS // num_chunks
-        extra_questions = self.TARGET_TOTAL_QUESTIONS % num_chunks
+        base_questions = target_questions // num_chunks
+        extra_questions = target_questions % num_chunks
 
         all_questions = []
 
         for i, chunk in enumerate(chunks):
             # Earlier chunks get extra questions if there's a remainder
-            num_questions = base_questions + (1 if i < extra_questions else 0)
+            chunk_question_count = base_questions + (1 if i < extra_questions else 0)
 
-            # Ensure at least 1 question per chunk
-            num_questions = max(1, num_questions)
+            # Skip chunks with 0 questions
+            if chunk_question_count == 0:
+                continue
 
-            logger.info(f"Processing chunk {i+1}/{num_chunks} ({len(chunk)} chars, {num_questions} questions)")
+            logger.info(f"Processing chunk {i+1}/{num_chunks} ({len(chunk)} chars, {chunk_question_count} questions)")
 
-            chunk_questions = self._request_quiz_chunk(chunk, num_questions, model, temperature)
-            all_questions.extend(chunk_questions)
+            # If this chunk needs more than MAX_QUESTIONS_PER_REQUEST, split into multiple API calls
+            remaining = chunk_question_count
+            while remaining > 0:
+                batch_size = min(remaining, MAX_QUESTIONS_PER_REQUEST)
+                chunk_questions = self._request_quiz_chunk(chunk, batch_size, model, temperature)
+                all_questions.extend(chunk_questions)
+                remaining -= batch_size
+
+                # Stop if we've collected enough questions
+                if len(all_questions) >= target_questions:
+                    break
+
+            if len(all_questions) >= target_questions:
+                break
+
+        # Trim to exact number requested (LLM might return slightly more/fewer)
+        all_questions = all_questions[:target_questions]
 
         logger.info(f"Generated {len(all_questions)} total questions from {num_chunks} chunks")
 
@@ -146,7 +175,7 @@ class QuestionGenerator():
         input_upload.save()
         output_upload.save()
 
-        quiz = self.make_quiz(all_questions, output_upload.id)
+        quiz = self.make_quiz(all_questions, output_upload.id, num_questions=target_questions)
         quiz.save()
 
         return all_questions
@@ -216,7 +245,7 @@ class QuestionGenerator():
             logger.debug(f"Response content: {response_content}")
             return []
 
-    def _request_quiz_single(self, input_text, quiz_name, model, temperature, instructions_override, file_path):
+    def _request_quiz_single(self, input_text, quiz_name, model, temperature, instructions_override, file_path, num_questions=None):
         """Original single-request quiz generation for backward compatibility with custom instructions."""
         chat_completion = self.client.chat.completions.create(
             messages=[
@@ -249,7 +278,7 @@ class QuestionGenerator():
         input_upload.save()
         output_upload.save()
 
-        quiz = self.make_quiz(output_json, output_upload.id)
+        quiz = self.make_quiz(output_json, output_upload.id, num_questions=num_questions)
         quiz.save()
 
         return output_json
@@ -307,5 +336,5 @@ class QuestionGenerator():
     def make_upload(self, filename):
         return Upload(filename=filename, user_id=self.user.id, content = "output", created_at=datetime.now())
     
-    def make_quiz(self, quiz_json, upload_id=None):
-        return Quiz(user_id=self.user.id, content=quiz_json, upload_id=upload_id, created_at=datetime.now())
+    def make_quiz(self, quiz_json, upload_id=None, num_questions=None):
+        return Quiz(user_id=self.user.id, content=quiz_json, upload_id=upload_id, created_at=datetime.now(), num_questions=num_questions)
