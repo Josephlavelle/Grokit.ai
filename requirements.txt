@@ -9,3 +9,4 @@ google-cloud-firestore
 flask-limiter
 PyPDF2
 python-docx
+pytest
