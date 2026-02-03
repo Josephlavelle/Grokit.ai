@@ -1,26 +1,17 @@
 import os
 import logging
-import boto3
-from botocore.exceptions import ClientError
+import resend
 
 logger = logging.getLogger(__name__)
 
 FROM_EMAIL = os.getenv("FROM_EMAIL", "noreply@grokit.app")
 APP_URL = os.getenv("APP_URL", "http://localhost:5050")
-AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 
-_ses_client = None
-
-def get_ses_client():
-    """Get or create SES client singleton."""
-    global _ses_client
-    if _ses_client is None:
-        _ses_client = boto3.client("ses", region_name=AWS_REGION)
-    return _ses_client
+resend.api_key = os.getenv("RESEND_API_KEY")
 
 
 def send_verification_email(to_email: str, token: str) -> bool:
-    """Send email verification link to user via AWS SES.
+    """Send email verification link to user via Resend.
 
     Args:
         to_email: The recipient's email address
@@ -106,24 +97,16 @@ def send_verification_email(to_email: str, token: str) -> bool:
     GroKit - AI-Powered Quiz Generation
     """
 
-    ses = get_ses_client()
     try:
-        response = ses.send_email(
-            Source=FROM_EMAIL,
-            Destination={"ToAddresses": [to_email]},
-            Message={
-                "Subject": {"Data": subject, "Charset": "UTF-8"},
-                "Body": {
-                    "Text": {"Data": text_body, "Charset": "UTF-8"},
-                    "Html": {"Data": html_body, "Charset": "UTF-8"}
-                }
-            }
-        )
-        logger.info(f"Verification email sent to {to_email}, MessageId: {response['MessageId']}")
+        response = resend.Emails.send({
+            "from": FROM_EMAIL,
+            "to": [to_email],
+            "subject": subject,
+            "html": html_body,
+            "text": text_body
+        })
+        logger.info(f"Verification email sent to {to_email}, MessageId: {response['id']}")
         return True
-    except ClientError as e:
-        logger.error(f"Failed to send verification email: {e.response['Error']['Message']}")
-        return False
     except Exception as e:
         logger.error(f"Failed to send verification email: {e}")
         return False
