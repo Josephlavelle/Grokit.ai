@@ -10,3 +10,4 @@ flask-limiter
 PyPDF2
 python-docx
 pytest
+resend
